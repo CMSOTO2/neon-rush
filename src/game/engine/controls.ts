@@ -3,13 +3,31 @@
 import { applyAction } from '../systems/playerSystem';
 import { speedAt } from '../levels/difficulty';
 import { activatePowerUp } from '../systems/powerUpSystem';
-import { GameEvent, Phase, PowerUpKind, type Action, type GameState } from '../types';
+import { GameEvent, GameMode, Phase, PowerUpKind, type Action, type GameState } from '../types';
 import { resetRun } from './state';
 
 export function startRun(state: GameState, seed: number): void {
   resetRun(state, Phase.Running, seed);
   state.events |= GameEvent.Start;
   // The Starting Boost upgrade launches every run with a speed boost.
+  if (state.upgrades[PowerUpKind.Boost] > 0) activatePowerUp(state, PowerUpKind.Boost, false);
+}
+
+// Starts a campaign level: fixed seed, finish line, and its own difficulty curve.
+export function startLevel(
+  state: GameState,
+  seed: number,
+  length: number,
+  difficultyOffset: number,
+  difficultyScale: number,
+): void {
+  resetRun(state, Phase.Running, seed);
+  state.mode = GameMode.Level;
+  state.levelLength = length;
+  state.difficultyOffset = difficultyOffset;
+  state.difficultyScale = difficultyScale;
+  state.speed = speedAt(difficultyOffset);
+  state.events |= GameEvent.Start;
   if (state.upgrades[PowerUpKind.Boost] > 0) activatePowerUp(state, PowerUpKind.Boost, false);
 }
 
@@ -40,7 +58,7 @@ export function reviveRun(state: GameState): void {
   state.fell = false;
   state.revives++;
   state.invuln = 2.5;
-  state.speed = speedAt(d) * 0.8;
+  state.speed = speedAt(state.difficultyOffset + d * state.difficultyScale) * 0.8;
   state.stats.cleanDistance = 0;
   state.events |= GameEvent.Revive;
 }

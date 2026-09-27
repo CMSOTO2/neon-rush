@@ -1,4 +1,5 @@
 import { ENVIRONMENTS } from '../constants/palette';
+import { CAMPAIGN } from './campaign';
 import { MAX_UPGRADE_LEVEL } from '../game/powerups/powerups';
 import { POWERUP_COUNT } from '../game/types';
 import type { LifetimeStats } from './achievements';
@@ -33,6 +34,8 @@ export type Profile = {
   settings: Settings;
   // Selected environment id (see constants/palette ENVIRONMENTS).
   world: string;
+  // Best stars (1-3) per campaign level id; missing means not finished.
+  campaign: Record<string, number>;
 };
 
 export function defaultProfile(now: Date = new Date()): Profile {
@@ -59,6 +62,7 @@ export function defaultProfile(now: Date = new Date()): Profile {
     },
     settings: { music: true, sfx: true, haptics: true, reduceMotion: false },
     world: 'city',
+    campaign: {},
   };
 }
 
@@ -170,7 +174,17 @@ export function sanitizeProfile(raw: unknown, now: Date = new Date()): Profile {
     settings.reduceMotion = bool(raw.settings.reduceMotion, settings.reduceMotion);
   }
 
+  const campaign: Record<string, number> = {};
+  if (isObj(raw.campaign)) {
+    for (const def of CAMPAIGN) {
+      const stars = raw.campaign[def.id];
+      if (typeof stars === 'number' && stars >= 1)
+        campaign[def.id] = Math.min(3, Math.floor(stars));
+    }
+  }
+
   return {
+    campaign,
     coins: Math.floor(num(raw.coins, 0)),
     xp: Math.floor(num(raw.xp, 0)),
     upgrades,

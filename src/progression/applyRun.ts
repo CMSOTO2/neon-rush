@@ -23,10 +23,13 @@ export type RunRewards = {
 // Folds one finished run into the profile: coins, XP and levels, missions, the daily
 // challenge, lifetime stats, achievements, and any cosmetics those unlock. Pure, so the
 // whole progression loop is unit-testable.
+// Level runs count toward coins, XP, missions and achievements, but best score and
+// distance records are for endless mode only.
 export function applyRun(
   profile: Profile,
   run: RunSummary,
   now: Date = new Date(),
+  endless = true,
 ): { profile: Profile; rewards: RunRewards } {
   const levelBefore = levelFromXp(profile.xp).level;
 
@@ -48,8 +51,10 @@ export function applyRun(
     totalPowerUps: profile.life.totalPowerUps + run.powerUps,
     missionsCompleted: m.completedCount,
     dailiesCompleted: profile.life.dailiesCompleted + (d.justCompleted ? 1 : 0),
-    bestScore: Math.max(profile.life.bestScore, run.score),
-    bestDistance: Math.max(profile.life.bestDistance, Math.floor(run.distance)),
+    bestScore: endless ? Math.max(profile.life.bestScore, run.score) : profile.life.bestScore,
+    bestDistance: endless
+      ? Math.max(profile.life.bestDistance, Math.floor(run.distance))
+      : profile.life.bestDistance,
   };
 
   let xp = profile.xp + runXp(run.distance, run.coins) + missionXp;
@@ -104,8 +109,8 @@ export function applyRun(
       dailyCompleted: d.justCompleted,
       dailyReward: d.reward,
       newlyOwned,
-      newBestScore: run.score > profile.life.bestScore,
-      newBestDistance: Math.floor(run.distance) > profile.life.bestDistance,
+      newBestScore: endless && run.score > profile.life.bestScore,
+      newBestDistance: endless && Math.floor(run.distance) > profile.life.bestDistance,
     },
   };
 }

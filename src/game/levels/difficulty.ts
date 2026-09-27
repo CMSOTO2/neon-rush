@@ -36,6 +36,14 @@ export const DIFFICULTY = {
 const ease = (distance: number, rampDistance: number): number =>
   1 - Math.exp(-distance / rampDistance);
 
+// Difficulty is driven by distance; levels shift and stretch it to start harder.
+export function effectiveDistance(
+  state: { difficultyOffset: number; difficultyScale: number },
+  z: number,
+): number {
+  return state.difficultyOffset + z * state.difficultyScale;
+}
+
 export function speedAt(distance: number): number {
   const d = DIFFICULTY;
   return d.startSpeed + (d.maxSpeed - d.startSpeed) * ease(distance, d.speedRampDistance);

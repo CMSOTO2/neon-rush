@@ -2,10 +2,19 @@
 
 import type { SkCanvas } from '@shopify/react-native-skia';
 
-import { laneX, OBSTACLES, WORLD } from '../config';
+import { LANE_COUNT, LANE_WIDTH, laneX, OBSTACLES, WORLD } from '../config';
 import { ObstacleKind, type GameState, type Obstacle } from '../types';
 import { scaleAt, sx, sy, type Camera } from './camera';
-import { distanceFade, drawBox, fillQuad, fillRect, groundQuad, type FaceRect } from './primitives';
+import {
+  addGroundQuad,
+  distanceFade,
+  drawBox,
+  fillQuad,
+  fillRect,
+  flushPath,
+  groundQuad,
+  type FaceRect,
+} from './primitives';
 import type { RenderResources } from './resources';
 
 // Each obstacle carries a visual cue for the move it asks for: chevrons pointing up on
@@ -397,4 +406,107 @@ export function drawGaps(
       0.8 * alpha,
     );
   }
+}
+
+// Finish arch for level mode: a checkered line across the road, two pillars and a
+// banner overhead, drawn in the world's road-edge colour.
+export function drawFinish(
+  canvas: SkCanvas,
+  res: RenderResources,
+  cam: Camera,
+  face: FaceRect,
+  state: GameState,
+): void {
+  const z = state.levelLength;
+  const alpha = distanceFade(cam, z, WORLD.drawDistance);
+  if (alpha <= 0) return;
+  const half = (LANE_COUNT * LANE_WIDTH) / 2 + 0.35;
+
+  // Two rows of checks on the road.
+  const cols = 12;
+  const cw = (half * 2) / cols;
+  for (let pass = 0; pass < 2; pass++) {
+    for (let row = 0; row < 2; row++) {
+      for (let c = 0; c < cols; c++) {
+        if ((c + row) % 2 !== pass) continue;
+        const x0 = -half + c * cw;
+        addGroundQuad(res, cam, x0, x0 + cw, z + row * 0.6, z + (row + 1) * 0.6);
+      }
+    }
+    flushPath(canvas, res, pass === 0 ? res.ui.white : res.ui.shadow, alpha);
+  }
+
+  const post = res.obstacle.gatePost;
+  const edge = res.env.roadEdge;
+  drawBox(
+    canvas,
+    res,
+    cam,
+    face,
+    -half - 0.5,
+    -half,
+    0,
+    4.8,
+    z,
+    z + 0.5,
+    edge,
+    post.side,
+    post.top,
+    alpha,
+  );
+  drawBox(
+    canvas,
+    res,
+    cam,
+    face,
+    half,
+    half + 0.5,
+    0,
+    4.8,
+    z,
+    z + 0.5,
+    edge,
+    post.side,
+    post.top,
+    alpha,
+  );
+  drawBox(
+    canvas,
+    res,
+    cam,
+    face,
+    -half - 0.5,
+    half + 0.5,
+    3.8,
+    4.8,
+    z,
+    z + 0.3,
+    edge,
+    post.side,
+    post.top,
+    alpha,
+  );
+  if (!face.valid) return;
+
+  // Checkered band and the word FINISH on the banner.
+  const w = face.r - face.l;
+  const fh = face.b - face.t;
+  const bandCols = 20;
+  for (let c = 0; c < bandCols; c++) {
+    if (c % 2 === 0) continue;
+    const l = face.l + (w * c) / bandCols;
+    fillRect(canvas, res, l, face.t, l + w / bandCols, face.t + fh * 0.22, res.ui.white, alpha);
+    fillRect(canvas, res, l - w / bandCols, face.b - fh * 0.22, l, face.b, res.ui.white, alpha);
+  }
+  const font = res.hudSmallFont;
+  const k = (fh * 0.48) / font.getSize();
+  if (k * font.getSize() < 6) return;
+  const tw = font.getTextWidth('FINISH') * k;
+  canvas.save();
+  canvas.translate((face.l + face.r) / 2 - tw / 2, face.t + fh * 0.7);
+  canvas.scale(k, k);
+  res.fill.setColor(res.ui.white);
+  res.fill.setAlphaf(alpha);
+  canvas.drawText('FINISH', 0, 0, res.fill, font);
+  canvas.restore();
 }

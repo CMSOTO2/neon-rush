@@ -9,6 +9,7 @@ import { Platform } from 'react-native';
 //   invincible 1: obstacles can't end the run (for reaching later content quickly)
 //   world      environment id to show regardless of unlocks (e.g. beach)
 //   perf       1: log average simulation and drawing time per frame every 2 seconds
+//   level      campaign level number to start on launch
 function read(name: string, envValue: string | undefined): string | null {
   if (!__DEV__) return null;
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -28,4 +29,5 @@ export const DEV = {
   invincible: read('invincible', process.env.EXPO_PUBLIC_INVINCIBLE) === '1',
   world: read('world', process.env.EXPO_PUBLIC_WORLD),
   perf: read('perf', process.env.EXPO_PUBLIC_PERF) === '1',
+  level: Number(read('level', process.env.EXPO_PUBLIC_LEVEL) ?? 0),
 };

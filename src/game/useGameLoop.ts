@@ -7,6 +7,7 @@ import { scheduleOnRN, scheduleOnUI } from 'react-native-worklets';
 
 import { initSfx, playSfx, type SfxName } from '../audio/sfx';
 import { DEV } from '../constants/dev';
+import type { LevelDef } from '../progression/campaign';
 import type { Loadout } from '../progression/cosmetics';
 import { reviveCost } from '../progression/economy';
 import { useGameStore } from '../store/gameStore';
@@ -17,6 +18,7 @@ import {
   reviveRun,
   setPaused,
   setUpgrades,
+  startLevel,
   startRun,
   takeEvents,
 } from './engine/controls';
@@ -196,31 +198,38 @@ export function useGameLoop({
     return () => clearTimeout(t);
   }, [runtime, beginRun]);
 
-  const onEvents = useCallback((events: number, stats: RunStats | null, revives: number) => {
-    haptic(events);
-    playEventSounds(events);
-    const store = useGameStore.getState();
-    if (events & GameEvent.Start) store.setPhase('running');
-    if (events & GameEvent.Revive) store.setPhase('running');
-    if (events & GameEvent.GameOver && stats) {
-      const run = {
-        score: stats.score,
-        distance: stats.distance,
-        coins: stats.coins,
-        jumps: stats.jumps,
-        slides: stats.slides,
-        obstaclesPassed: stats.obstaclesPassed,
-        stumbles: stats.stumbles,
-        powerUps: stats.powerUps,
-        bestCleanDistance: stats.bestCleanDistance,
-      };
-      // Offer a continue if the player can afford it; otherwise the run is over.
-      const cost = reviveCost(revives);
-      const coins = useProfileStore.getState().profile.coins;
-      if (cost !== null && coins >= cost) store.offerRevive(run, revives);
-      else store.finishRun(run);
-    }
-  }, []);
+  const onEvents = useCallback(
+    (events: number, stats: RunStats | null, revives: number, coinsPlaced: number) => {
+      haptic(events);
+      playEventSounds(events);
+      const store = useGameStore.getState();
+      if (events & GameEvent.Start) store.setPhase('running');
+      if (events & GameEvent.Revive) store.setPhase('running');
+      if (events & (GameEvent.GameOver | GameEvent.LevelComplete) && stats) {
+        const run = {
+          score: stats.score,
+          distance: stats.distance,
+          coins: stats.coins,
+          jumps: stats.jumps,
+          slides: stats.slides,
+          obstaclesPassed: stats.obstaclesPassed,
+          stumbles: stats.stumbles,
+          powerUps: stats.powerUps,
+          bestCleanDistance: stats.bestCleanDistance,
+        };
+        if (events & GameEvent.LevelComplete) {
+          store.completeLevel(run, coinsPlaced, revives);
+          return;
+        }
+        // Offer a continue if the player can afford it; otherwise the run is over.
+        const cost = reviveCost(revives);
+        const coins = useProfileStore.getState().profile.coins;
+        if (cost !== null && coins >= cost) store.offerRevive(run, revives);
+        else store.finishRun(run);
+      }
+    },
+    [],
+  );
 
   const onFrame = useCallback(
     (info: FrameInfo) => {
@@ -240,7 +249,8 @@ export function useGameLoop({
       const ev = takeEvents(state);
       // Stats are only copied across threads when the run ends.
       if (ev !== 0) {
-        scheduleOnRN(onEvents, ev, ev & GameEvent.GameOver ? state.stats : null, state.revives);
+        const ending = ev & (GameEvent.GameOver | GameEvent.LevelComplete);
+        scheduleOnRN(onEvents, ev, ending ? state.stats : null, state.revives, state.coinsPlaced);
       }
 
       const canvas = resources.recorder.beginRecording(resources.bounds);
@@ -303,10 +313,26 @@ export function useGameLoop({
         const rt = runtime.get();
         if (rt) fn(rt);
       });
+    const startLevelOnUI = (def: LevelDef) => {
+      const { seed, length, difficultyOffset, difficultyScale } = def;
+      onUI((rt) => {
+        'worklet';
+        setUpgrades(rt.state, upgradeLevels.get());
+        startLevel(rt.state, seed, length, difficultyOffset, difficultyScale);
+      });
+    };
     return {
+      // Starts (or restarts) whatever is being played: the current level, or endless.
       start: () => {
-        onUI(beginRun);
+        const level = useGameStore.getState().level;
+        if (level) startLevelOnUI(level);
+        else onUI(beginRun);
         // Set here too: when restarting from pause the loop is stopped until this changes.
+        useGameStore.getState().setPhase('running');
+      },
+      startLevel: (def: LevelDef) => {
+        useGameStore.getState().setLevel(def);
+        startLevelOnUI(def);
         useGameStore.getState().setPhase('running');
       },
       pause: () => {
@@ -342,10 +368,11 @@ export function useGameLoop({
           'worklet';
           returnToReady(rt.state, newSeed());
         });
+        useGameStore.getState().setLevel(null);
         useGameStore.getState().setPhase('ready');
       },
     };
-  }, [runtime, beginRun]);
+  }, [runtime, beginRun, upgradeLevels]);
 
   // Pause automatically when the app goes to the background mid-run.
   useEffect(() => {

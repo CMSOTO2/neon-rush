@@ -8,6 +8,8 @@ export const Phase = {
   Running: 1,
   Crashing: 2,
   Over: 3,
+  // Crossed the finish line in level mode.
+  Complete: 4,
 } as const;
 export type Phase = (typeof Phase)[keyof typeof Phase];
 
@@ -63,6 +65,12 @@ export const GameEvent = {
   Smash: 2048,
   Boost: 4096,
   Revive: 8192,
+  LevelComplete: 16384,
+} as const;
+
+export const GameMode = {
+  Endless: 0,
+  Level: 1,
 } as const;
 
 export type PlayerState = {
@@ -155,6 +163,13 @@ export type RunStats = {
 
 export type GameState = {
   phase: Phase;
+  // Endless or a campaign level; levels have a finish line and their own difficulty.
+  mode: number;
+  levelLength: number;
+  difficultyOffset: number;
+  difficultyScale: number;
+  // Coins laid out on the track this run (the level coin star is a share of these).
+  coinsPlaced: number;
   paused: boolean;
   time: number;
   // Distance along the track; the player stands at z = distance.

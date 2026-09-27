@@ -7,6 +7,7 @@ import { setSfxEnabled } from '../audio/sfx';
 import { ENVIRONMENTS } from '../constants/palette';
 import { levelFromXp } from '../progression/levels';
 import { applyRun, type RunRewards } from '../progression/applyRun';
+import { levelById, levelReward } from '../progression/campaign';
 import { cosmetic, type CosmeticSlot, type Loadout } from '../progression/cosmetics';
 import { dailyFor, todayKey } from '../progression/daily';
 import { upgradeCost } from '../progression/economy';
@@ -49,6 +50,12 @@ type ProfileStore = {
   profile: Profile;
   hydrated: boolean;
   recordRun: (run: RunSummary) => RunRewards;
+  // Records a level attempt; returns run rewards plus stars and level coins.
+  recordLevel: (
+    levelId: string,
+    run: RunSummary,
+    stars: number,
+  ) => { rewards: RunRewards; levelCoins: number; previousStars: number };
   spendCoins: (amount: number) => boolean;
   buyUpgrade: (kind: number) => boolean;
   buyCosmetic: (id: string) => boolean;
@@ -69,6 +76,22 @@ export const useProfileStore = create<ProfileStore>()(
         const { profile, rewards } = applyRun(get().profile, run);
         set({ profile });
         return rewards;
+      },
+
+      recordLevel: (levelId, run, stars) => {
+        const def = levelById(levelId);
+        const { profile, rewards } = applyRun(get().profile, run, new Date(), false);
+        const previousStars = profile.campaign[levelId] ?? 0;
+        const levelCoins = def ? levelReward(def, previousStars, stars) : 0;
+        set({
+          profile: {
+            ...profile,
+            coins: profile.coins + levelCoins,
+            campaign:
+              stars > previousStars ? { ...profile.campaign, [levelId]: stars } : profile.campaign,
+          },
+        });
+        return { rewards, levelCoins, previousStars };
       },
 
       spendCoins: (amount) => {

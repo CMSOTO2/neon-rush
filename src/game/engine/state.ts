@@ -73,6 +73,11 @@ export function createGameState(
 
   const state: GameState = {
     phase: Phase.Ready,
+    mode: 0,
+    levelLength: 0,
+    difficultyOffset: 0,
+    difficultyScale: 1,
+    coinsPlaced: 0,
     paused: false,
     time: 0,
     distance: 0,
@@ -186,6 +191,12 @@ export function resetRun(state: GameState, phase: Phase, seed: number): void {
 
   state.phase = phase;
   state.paused = false;
+  // Back to endless defaults; startLevel overrides these.
+  state.mode = 0;
+  state.levelLength = 0;
+  state.difficultyOffset = 0;
+  state.difficultyScale = 1;
+  state.coinsPlaced = 0;
   state.distance = 0;
   state.speed = phase === Phase.Running ? speedAt(0) : 0;
   state.nextRowZ = WORLD.firstRowDistance;

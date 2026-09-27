@@ -3,10 +3,10 @@
 import { LANE_COUNT, OBSTACLES, POOL_SIZES, POWER, WORLD } from '../config';
 import { nextRandom } from '../engine/random';
 import { placeRowCoins } from '../levels/coinPatterns';
-import { rowGapAt, speedAt } from '../levels/difficulty';
+import { effectiveDistance, rowGapAt, speedAt } from '../levels/difficulty';
 import { EMPTY, generateRow, ONCOMING } from '../levels/patterns';
 import { POWERUP_WEIGHTS } from '../powerups/powerups';
-import { ObstacleKind, type GameState } from '../types';
+import { GameMode, ObstacleKind, type GameState } from '../types';
 
 function depthOf(kind: number): number {
   if (kind === ObstacleKind.Tram) return OBSTACLES.tram.length;
@@ -26,7 +26,7 @@ function acquire(state: GameState, code: number, lane: number, z: number): void 
     o.lane = lane;
     o.z0 = z;
     o.z1 = z + depthOf(kind);
-    o.vz = code === ONCOMING ? -speedAt(z) * OBSTACLES.oncomingSpeedFactor : 0;
+    o.vz = code === ONCOMING ? -state.speed * OBSTACLES.oncomingSpeedFactor : 0;
     o.passed = false;
     o.seed = nextRandom(state);
     return;
@@ -78,9 +78,12 @@ export function updateSpawner(state: GameState): void {
   }
 
   const buf = state.rowBuffer;
-  while (state.nextRowZ < state.distance + WORLD.spawnAhead) {
+  // Levels stop generating shortly before the finish line.
+  const lastRowZ = state.mode === GameMode.Level ? state.levelLength - 20 : Infinity;
+  while (state.nextRowZ < state.distance + WORLD.spawnAhead && state.nextRowZ < lastRowZ) {
     const z = state.nextRowZ;
-    generateRow(state, z, buf);
+    const dz = effectiveDistance(state, z);
+    generateRow(state, dz, buf);
     for (let lane = 0; lane < LANE_COUNT; lane++) {
       if (buf[lane] !== EMPTY) acquire(state, buf[lane], lane, z);
     }
@@ -103,6 +106,6 @@ export function updateSpawner(state: GameState): void {
     state.prevSafe = state.safeLane;
     state.prevRowZ = z;
     state.rowCount++;
-    state.nextRowZ += rowGapAt(z, speedAt(z));
+    state.nextRowZ += rowGapAt(dz, speedAt(dz));
   }
 }

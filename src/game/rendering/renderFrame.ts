@@ -3,12 +3,12 @@
 import type { SkCanvas } from '@shopify/react-native-skia';
 
 import { POOL_SIZES, WORLD } from '../config';
-import { ObstacleKind, type GameState } from '../types';
+import { GameMode, ObstacleKind, type GameState } from '../types';
 import type { Camera } from './camera';
 import { drawBuildings, drawRoad, drawSkyAndGround } from './drawEnvironment';
 import { drawCoin, drawPickup } from './drawCollectibles';
 import { drawHud, drawParticles, drawSpeedLines } from './drawHud';
-import { drawGaps, drawObstacle } from './drawObstacles';
+import { drawFinish, drawGaps, drawObstacle } from './drawObstacles';
 import { drawRunner } from './drawRunner';
 import type { FaceRect } from './primitives';
 import type { RenderResources } from './resources';
@@ -24,6 +24,7 @@ export type RenderScratch = {
 };
 
 const PLAYER_SLOT = -1;
+const FINISH_SLOT = -2;
 const COIN_BASE = 1000;
 const PICKUP_BASE = 2000;
 
@@ -61,6 +62,11 @@ function sortDrawOrder(state: GameState, scratch: RenderScratch, far: number): n
   order[n] = PLAYER_SLOT;
   keys[n] = state.distance;
   n++;
+  if (state.mode === GameMode.Level && state.levelLength < far && state.levelLength + 1 > near) {
+    order[n] = FINISH_SLOT;
+    keys[n] = state.levelLength;
+    n++;
+  }
   // Insertion sort, descending: the list is nearly sorted frame to frame.
   for (let i = 1; i < n; i++) {
     const k = keys[i];
@@ -101,6 +107,7 @@ export function renderFrame(
   for (let i = 0; i < n; i++) {
     const code = scratch.order[i];
     if (code === PLAYER_SLOT) drawRunner(canvas, res, cam, state);
+    else if (code === FINISH_SLOT) drawFinish(canvas, res, cam, scratch.face, state);
     else if (code >= PICKUP_BASE)
       drawPickup(canvas, res, cam, state, state.pickups[code - PICKUP_BASE]);
     else if (code >= COIN_BASE) drawCoin(canvas, res, cam, state, state.coins[code - COIN_BASE]);

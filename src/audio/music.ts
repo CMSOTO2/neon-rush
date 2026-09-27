@@ -23,6 +23,7 @@ const VOLUME: Record<UiPhase, number> = {
   paused: 0,
   revive: 0.15,
   over: 0.22,
+  complete: 0.3,
 };
 
 function apply(enabled: boolean, phase: UiPhase, active: boolean): void {

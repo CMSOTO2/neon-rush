@@ -309,6 +309,24 @@ export function drawRunner(
     headX = Math.sin(t * 0.9) * 0.035;
     lHy += b;
     rHy += b;
+  } else if (state.phase === Phase.Complete) {
+    // Finish-line celebration: little hops with both arms up.
+    const hop = Math.abs(Math.sin(t * 7)) * 0.12;
+    hipY += hop;
+    chestY += hop;
+    headY += hop;
+    lFy = hop;
+    rFy = hop;
+    lKy += hop;
+    rKy += hop;
+    lHx = -0.42;
+    rHx = 0.42;
+    lHy = 1.95 + hop;
+    rHy = 1.95 + hop;
+    lEx = -0.4;
+    rEx = 0.4;
+    lEy = 1.55 + hop;
+    rEy = 1.55 + hop;
   } else if (crashed) {
     const k = clamp(state.crashTime * 2.6, 0, 1);
     lean = -78 * k;

@@ -14,6 +14,7 @@ import Animated, {
 
 import { FONTS } from '../constants/fonts';
 import { UI } from '../constants/palette';
+import { CAMPAIGN } from '../progression/campaign';
 import { dailyReward } from '../progression/daily';
 import { missionText } from '../progression/missions';
 import { useProfileStore } from '../store/profileStore';
@@ -44,6 +45,10 @@ export function MainMenu({ top, bottom, onPlay }: Props) {
   const playStyle = useAnimatedStyle(() => ({ transform: [{ scale: 1 + pulse.value * 0.04 }] }));
 
   const daily = profile.daily;
+  // The first level that isn't finished yet (or the last one).
+  const nextLevelNumber = (
+    CAMPAIGN.find((l) => !profile.campaign[l.id]) ?? CAMPAIGN[CAMPAIGN.length - 1]
+  ).number;
   const missionsReady = profile.missions.filter((m) => m.progress >= m.target).length;
   const nextMission = profile.missions.find((m) => m.progress < m.target) ?? profile.missions[0];
 
@@ -96,11 +101,20 @@ export function MainMenu({ top, bottom, onPlay }: Props) {
 
       <View style={styles.spacer} pointerEvents="none" />
 
-      <Animated.View style={[styles.play, playStyle]}>
-        <NeonButton label="PLAY" onPress={onPlay} accessibilityHint="Starts a run" />
-      </Animated.View>
+      <View style={styles.playRow}>
+        <Animated.View style={[styles.play, playStyle]}>
+          <NeonButton label="PLAY" onPress={onPlay} accessibilityHint="Starts an endless run" />
+        </Animated.View>
+        <NeonButton
+          label={`LEVELS ${nextLevelNumber}`}
+          variant="secondary"
+          style={styles.levels}
+          accessibilityHint="Choose a campaign level"
+          onPress={() => router.push('/levels')}
+        />
+      </View>
       <Text style={styles.hint} pointerEvents="none">
-        or swipe on the track
+        endless run · or swipe on the track
       </Text>
 
       <View style={styles.tiles}>
@@ -177,7 +191,9 @@ const styles = StyleSheet.create({
   cardTitle: { flex: 1, fontFamily: FONTS.bold, fontSize: 11, color: UI.textDim, letterSpacing: 1 },
   cardReward: { fontFamily: FONTS.bold, fontSize: 12, color: UI.gold },
   cardText: { fontFamily: FONTS.medium, fontSize: 13, color: UI.text, minHeight: 34 },
-  play: { paddingHorizontal: 48 },
+  playRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16 },
+  play: { flex: 1.4 },
+  levels: { flex: 1 },
   hint: {
     textAlign: 'center',
     marginTop: 6,

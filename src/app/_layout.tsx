@@ -14,7 +14,7 @@ import { NEON_CITY } from '../constants/palette';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-const MENU_SCREENS = ['shop', 'characters', 'missions', 'achievements', 'settings'];
+const MENU_SCREENS = ['levels', 'shop', 'characters', 'missions', 'achievements', 'settings'];
 
 export default function RootLayout() {
   useMusic();

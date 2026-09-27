@@ -1,14 +1,14 @@
 'worklet';
 
 import { POOL_SIZES, POWER, WORLD } from '../config';
-import { speedAt } from '../levels/difficulty';
+import { effectiveDistance, speedAt } from '../levels/difficulty';
 import { updateCoins } from '../systems/coinSystem';
 import { checkCollisions } from '../systems/collisionSystem';
-import { updateParticles } from '../systems/particleSystem';
+import { burstSparkles, updateParticles } from '../systems/particleSystem';
 import { updatePlayer } from '../systems/playerSystem';
 import { scoreMultiplier, updatePowerUps } from '../systems/powerUpSystem';
 import { updateSpawner } from '../systems/spawnSystem';
-import { GameEvent, Phase, PowerUpKind, type GameState } from '../types';
+import { GameEvent, GameMode, Phase, PowerUpKind, type GameState } from '../types';
 
 function moveObstacles(state: GameState, dt: number): void {
   const pool = state.obstacles;
@@ -28,7 +28,7 @@ export function stepGame(state: GameState, frameDt: number): void {
 
   if (state.phase === Phase.Running) {
     // Ease toward the target speed so boosts ramp up and down instead of snapping.
-    const base = speedAt(state.distance);
+    const base = speedAt(effectiveDistance(state, state.distance));
     const target = state.power[PowerUpKind.Boost] > 0 ? base * POWER.boostSpeedFactor : base;
     state.speed += (target - state.speed) * (1 - Math.exp(-4 * dt));
 
@@ -57,6 +57,26 @@ export function stepGame(state: GameState, frameDt: number): void {
     updateSpawner(state);
     state.stats.distance = state.distance;
     state.stats.score = Math.floor(state.scoreAcc);
+
+    // Crossing the finish line ends a level.
+    if (
+      state.mode === GameMode.Level &&
+      state.phase === Phase.Running &&
+      state.distance >= state.levelLength
+    ) {
+      state.phase = Phase.Complete;
+      state.crashTime = 0;
+      state.events |= GameEvent.LevelComplete;
+      for (let i = 0; i < 4; i++) {
+        burstSparkles(state, state.player.x + (i - 1.5), 2 + i * 0.3, state.distance + 4, 10);
+      }
+    }
+  } else if (state.phase === Phase.Complete) {
+    // Coast to a stop past the arch, still collecting nothing and hitting nothing.
+    state.crashTime += dt;
+    state.speed *= Math.exp(-2.5 * dt);
+    state.distance += state.speed * dt;
+    updatePlayer(state, dt);
   } else if (state.phase === Phase.Crashing) {
     state.crashTime += dt;
     state.speed = 0;

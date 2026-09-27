@@ -3,10 +3,11 @@
 import { COINS, laneX, OBSTACLES, PLAYER, POOL_SIZES } from '../config';
 import { nextRandom } from '../engine/random';
 import { ObstacleKind, type GameState } from '../types';
-import { speedAt } from './difficulty';
+import { effectiveDistance, speedAt } from './difficulty';
 import { EMPTY, isTramCode } from './patterns';
 
-export function placeCoin(state: GameState, x: number, y: number, z: number): void {
+// `counted` coins make up the level's coin star; bonus sky coins don't.
+export function placeCoin(state: GameState, x: number, y: number, z: number, counted = true): void {
   const pool = state.coins;
   for (let i = 0; i < POOL_SIZES.coins; i++) {
     const c = pool[i];
@@ -19,6 +20,7 @@ export function placeCoin(state: GameState, x: number, y: number, z: number): vo
     c.collectTime = 0;
     c.magnet = false;
     c.seed = (i * 0.618) % 1;
+    if (counted) state.coinsPlaced++;
     return;
   }
 }
@@ -30,7 +32,7 @@ function line(state: GameState, lane: number, z0: number, z1: number, y: number)
 
 // Coins that follow the runner's own jump arc, centred on an obstacle at `centerZ`.
 function arc(state: GameState, lane: number, centerZ: number): void {
-  const speed = speedAt(centerZ);
+  const speed = speedAt(effectiveDistance(state, centerZ));
   const halfAir = PLAYER.jumpVelocity / PLAYER.gravity;
   const apex = (PLAYER.jumpVelocity * halfAir) / 2;
   const x = laneX(lane);
@@ -53,7 +55,7 @@ export function placeRowCoins(state: GameState, rowZ: number, row: number[]): vo
   const start = state.rowCount === 0 ? rowZ - 24 : state.prevRowZ + clearance;
   const content = row[lane];
   // Leave room for the arc or low run that crosses the row itself.
-  const arcReach = speedAt(rowZ) * (PLAYER.jumpVelocity / PLAYER.gravity);
+  const arcReach = speedAt(effectiveDistance(state, rowZ)) * (PLAYER.jumpVelocity / PLAYER.gravity);
   const approachEnd =
     content === EMPTY ? rowZ + 4 : content === ObstacleKind.Gate ? rowZ - 6 : rowZ - arcReach - 2;
   if (approachEnd - start < COINS.spacing * 2) return;
@@ -101,12 +103,12 @@ export function placeSkyTrail(
   const end = fromZ + length;
   while (z < end) {
     const x = laneX(lane);
-    for (let i = 0; i < 6 && z < end; i++, z += spacing) placeCoin(state, x, y, z);
+    for (let i = 0; i < 6 && z < end; i++, z += spacing) placeCoin(state, x, y, z, false);
     let next = lane + (nextRandom(state) < 0.5 ? -1 : 1);
     if (next < 0 || next > 2) next = lane + (lane === 0 ? 1 : -1);
     const nx = laneX(next);
     for (let i = 1; i <= 3 && z < end; i++, z += spacing)
-      placeCoin(state, x + ((nx - x) * i) / 4, y, z);
+      placeCoin(state, x + ((nx - x) * i) / 4, y, z, false);
     lane = next;
   }
 }

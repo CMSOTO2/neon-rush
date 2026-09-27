@@ -6,6 +6,7 @@ import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { FONTS } from '../constants/fonts';
 import { UI } from '../constants/palette';
 import type { RunRewards } from '../progression/applyRun';
+import type { LevelDef } from '../progression/campaign';
 import { cosmetic } from '../progression/cosmetics';
 import { missionText } from '../progression/missions';
 import type { RunResult } from '../store/gameStore';
@@ -18,6 +19,8 @@ import { Panel } from './Panel';
 type Props = {
   result: RunResult;
   rewards: RunRewards | null;
+  // Set when a campaign level was failed.
+  level?: LevelDef | null;
   onRestart: () => void;
   onMenu: () => void;
 };
@@ -49,15 +52,23 @@ function rewardLines(r: RunRewards): Line[] {
   return lines;
 }
 
-export function GameOverOverlay({ result, rewards, onRestart, onMenu }: Props) {
+export function GameOverOverlay({ result, rewards, level, onRestart, onMenu }: Props) {
   const xp = useProfileStore((s) => s.profile.xp);
   const best = useProfileStore((s) => s.profile.life.bestScore);
   const lines = rewards ? rewardLines(rewards) : [];
   const shown = lines.slice(0, 4);
 
   return (
-    <Panel title="CRASHED!" titleColor={UI.accentHot}>
-      <View style={styles.scoreBlock}>
+    <Panel title={level ? `LEVEL ${level.number}` : 'CRASHED!'} titleColor={UI.accentHot}>
+      {level && (
+        <View style={styles.scoreBlock}>
+          <Text style={styles.scoreLabel}>SO CLOSE! YOU MADE IT</Text>
+          <Text style={styles.score}>
+            {Math.min(99, Math.floor((result.distance / level.length) * 100))}%
+          </Text>
+        </View>
+      )}
+      <View style={[styles.scoreBlock, level ? styles.hidden : null]}>
         <Text style={styles.scoreLabel}>SCORE</Text>
         <Text style={styles.score}>{result.score.toLocaleString()}</Text>
         {rewards?.newBestScore ? (
@@ -105,7 +116,7 @@ export function GameOverOverlay({ result, rewards, onRestart, onMenu }: Props) {
         <Text style={styles.more}>+{lines.length - shown.length} more</Text>
       )}
 
-      <NeonButton label="RUN AGAIN" onPress={onRestart} />
+      <NeonButton label={level ? 'RETRY' : 'RUN AGAIN'} onPress={onRestart} />
       <NeonButton label="MENU" variant="secondary" onPress={onMenu} />
     </Panel>
   );
@@ -122,6 +133,7 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
 
 const styles = StyleSheet.create({
   scoreBlock: { alignItems: 'center' },
+  hidden: { display: 'none' },
   scoreLabel: { fontFamily: FONTS.semibold, fontSize: 14, color: UI.textDim, letterSpacing: 3 },
   score: { fontFamily: FONTS.bold, fontSize: 54, color: UI.text, lineHeight: 60 },
   bestLine: { fontFamily: FONTS.medium, fontSize: 16, color: UI.textDim },

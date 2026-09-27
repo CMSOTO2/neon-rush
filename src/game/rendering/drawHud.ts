@@ -3,7 +3,7 @@
 import type { SkCanvas } from '@shopify/react-native-skia';
 
 import { hash01 } from '../engine/random';
-import { ParticleKind, Phase, PowerUpKind, type GameState } from '../types';
+import { GameMode, ParticleKind, Phase, PowerUpKind, type GameState } from '../types';
 import { scaleAt, sx, sy, type Camera } from './camera';
 import { drawPowerIcon } from './drawCollectibles';
 import type { RenderResources } from './resources';
@@ -135,6 +135,30 @@ export function drawHud(canvas: SkCanvas, res: RenderResources, state: GameState
   canvas.drawCircle(coinX, cy - 7, 9 * flash, res.fill);
   res.fill.setColor(res.coin.face);
   canvas.drawCircle(coinX, cy - 7, 7 * flash, res.fill);
+
+  // Level progress: a bar across the top with a flag at the finish.
+  if (state.mode === GameMode.Level && state.levelLength > 0) {
+    const x0 = 78;
+    const x1 = right - 96;
+    const y = top + 22;
+    const frac = Math.min(1, state.distance / state.levelLength);
+    res.stroke.setStrokeWidth(8);
+    res.stroke.setColor(res.ui.shadow);
+    res.stroke.setAlphaf(0.7);
+    canvas.drawLine(x0, y, x1, y, res.stroke);
+    res.stroke.setColor(res.ui.accent);
+    res.stroke.setAlphaf(1);
+    if (frac > 0) canvas.drawLine(x0, y, x0 + (x1 - x0) * frac, y, res.stroke);
+    res.fill.setColor(res.ui.white);
+    res.fill.setAlphaf(1);
+    canvas.drawCircle(x0 + (x1 - x0) * frac, y, 7, res.fill);
+    res.fill.setColor(res.ui.gold);
+    res.rect.setXYWH(x1 + 4, y - 11, 12, 8);
+    canvas.drawRect(res.rect, res.fill);
+    res.stroke.setStrokeWidth(2);
+    res.stroke.setColor(res.ui.white);
+    canvas.drawLine(x1 + 4, y - 11, x1 + 4, y + 6, res.stroke);
+  }
 
   // Active power-ups: icon with a draining ring, stacked down the left edge.
   let slot = 0;
