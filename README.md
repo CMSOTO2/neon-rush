@@ -1,6 +1,6 @@
 # Neon Rush
 
-A 2.5D endless runner for iOS and Android, built with Expo (SDK 57), React Native Skia, Reanimated and Gesture Handler. The full brief is in [SPEC.md](SPEC.md).
+A 2.5D endless runner for iOS and Android, built with Expo (SDK 57), React Native Skia, Reanimated and Gesture Handler. The full brief is in [SPEC.md](SPEC.md); the post-launch money plan is in [MONETIZATION.md](MONETIZATION.md).
 
 ## Run it
 
