@@ -574,11 +574,11 @@ Three decisions have a large effect on how development goes. Settle them early.
 
 ### Choose 2D, 2.5D, or 3D
 
-| Approach | Advantages | Disadvantages |
-| --- | --- | --- |
-| 2D | Simple, performant, easier to build | Less depth and visual impact |
-| 2.5D | Good visuals, manageable complexity | Requires careful perspective and animation |
-| Full 3D | Immersive environments and characters | More complicated rendering and asset pipeline |
+| Approach | Advantages                            | Disadvantages                                 |
+| -------- | ------------------------------------- | --------------------------------------------- |
+| 2D       | Simple, performant, easier to build   | Less depth and visual impact                  |
+| 2.5D     | Good visuals, manageable complexity   | Requires careful perspective and animation    |
+| Full 3D  | Immersive environments and characters | More complicated rendering and asset pipeline |
 
 Start with 2.5D. Perspective, colorful environments, and animated characters are enough for a convincing endless runner without building a full 3D engine.
 
