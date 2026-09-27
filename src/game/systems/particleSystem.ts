@@ -100,10 +100,78 @@ export function updateParticles(state: GameState, dt: number): void {
     p.x += p.vx * dt;
     p.y += p.vy * dt;
     p.z += p.vz * dt;
-    if (p.kind !== ParticleKind.Star) p.vy -= 9 * dt;
+    // Stars, sparkles and flames float; debris falls.
+    if (
+      p.kind === ParticleKind.Dust ||
+      p.kind === ParticleKind.Spark ||
+      p.kind === ParticleKind.Shard
+    ) {
+      p.vy -= 9 * dt;
+    }
     if (p.y < 0) {
       p.y = 0;
       p.vy *= -0.3;
     }
+  }
+}
+
+export function burstSparkles(
+  state: GameState,
+  x: number,
+  y: number,
+  z: number,
+  count: number,
+): void {
+  for (let i = 0; i < count; i++) {
+    const a = fxRandom(state) * Math.PI * 2;
+    const v = 1.5 + fxRandom(state) * 2;
+    spawnParticle(
+      state,
+      ParticleKind.Sparkle,
+      x,
+      y,
+      z,
+      Math.cos(a) * v,
+      Math.sin(a) * v + 1,
+      state.speed * 0.9,
+      0.3 + fxRandom(state) * 0.2,
+      0.09,
+    );
+  }
+}
+
+// Jetpack exhaust, streaming down and back from the runner's back.
+export function emitFlame(state: GameState, x: number, y: number, z: number): void {
+  if (fxRandom(state) > 0.7) return;
+  spawnParticle(
+    state,
+    ParticleKind.Flame,
+    x + (fxRandom(state) - 0.5) * 0.3,
+    y + 0.7,
+    z - 0.35,
+    (fxRandom(state) - 0.5) * 0.8,
+    -4 - fxRandom(state) * 2,
+    state.speed * 0.7,
+    0.22 + fxRandom(state) * 0.1,
+    0.16,
+  );
+}
+
+// Pieces flying off an obstacle smashed by a shield or speed boost.
+export function burstShards(state: GameState, x: number, y: number, z: number): void {
+  for (let i = 0; i < 14; i++) {
+    const a = fxRandom(state) * Math.PI * 2;
+    spawnParticle(
+      state,
+      ParticleKind.Shard,
+      x + (fxRandom(state) - 0.5) * 1.5,
+      y + fxRandom(state),
+      z,
+      Math.cos(a) * 5,
+      3 + fxRandom(state) * 5,
+      state.speed * 0.3 + 4 + fxRandom(state) * 6,
+      0.6 + fxRandom(state) * 0.3,
+      0.14,
+    );
   }
 }

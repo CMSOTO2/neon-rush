@@ -1,12 +1,24 @@
 'worklet';
 
-import { WORLD } from '../config';
+import { POOL_SIZES, POWER, WORLD } from '../config';
 import { speedAt } from '../levels/difficulty';
+import { updateCoins } from '../systems/coinSystem';
 import { checkCollisions } from '../systems/collisionSystem';
 import { updateParticles } from '../systems/particleSystem';
 import { updatePlayer } from '../systems/playerSystem';
+import { scoreMultiplier, updatePowerUps } from '../systems/powerUpSystem';
 import { updateSpawner } from '../systems/spawnSystem';
-import { GameEvent, Phase, type GameState } from '../types';
+import { GameEvent, Phase, PowerUpKind, type GameState } from '../types';
+
+function moveObstacles(state: GameState, dt: number): void {
+  const pool = state.obstacles;
+  for (let i = 0; i < POOL_SIZES.obstacles; i++) {
+    const o = pool[i];
+    if (!o.active || o.vz === 0) continue;
+    o.z0 += o.vz * dt;
+    o.z1 += o.vz * dt;
+  }
+}
 
 // Advances the simulation by one frame. Rendering reads the state afterwards.
 export function stepGame(state: GameState, frameDt: number): void {
@@ -15,20 +27,33 @@ export function stepGame(state: GameState, frameDt: number): void {
   state.time += dt;
 
   if (state.phase === Phase.Running) {
-    state.speed = speedAt(state.distance);
+    // Ease toward the target speed so boosts ramp up and down instead of snapping.
+    const base = speedAt(state.distance);
+    const target = state.power[PowerUpKind.Boost] > 0 ? base * POWER.boostSpeedFactor : base;
+    state.speed += (target - state.speed) * (1 - Math.exp(-4 * dt));
+
     // Substep so a fast frame can't carry the player through a thin barrier.
     const steps = Math.max(1, Math.ceil((state.speed * dt) / WORLD.maxSubstepDistance));
     const h = dt / steps;
+    const mult = scoreMultiplier(state);
     for (let i = 0; i < steps && state.phase === Phase.Running; i++) {
       const prevDistance = state.distance;
       const prevX = state.player.x;
-      state.distance += state.speed * h;
+      const step = state.speed * h;
+      state.distance += step;
+      state.scoreAcc += step * mult;
+      state.stats.cleanDistance += step;
+      moveObstacles(state, h);
       updatePlayer(state, h);
-      checkCollisions(state, prevDistance, prevX);
+      checkCollisions(state, prevDistance, prevX, h);
+    }
+    if (state.phase === Phase.Running) {
+      updatePowerUps(state, dt);
+      updateCoins(state, dt);
     }
     updateSpawner(state);
     state.stats.distance = state.distance;
-    state.stats.score = Math.floor(state.distance);
+    state.stats.score = Math.floor(state.scoreAcc);
   } else if (state.phase === Phase.Crashing) {
     state.crashTime += dt;
     state.speed = 0;
@@ -45,4 +70,7 @@ export function stepGame(state: GameState, frameDt: number): void {
   state.shake = Math.max(0, state.shake - dt * 2.5);
   const camTarget = state.player.x * 0.55;
   state.camX += (camTarget - state.camX) * (1 - Math.exp(-8 * dt));
+  // Lift the camera while flying so the runner stays framed.
+  const liftTarget = state.player.flying ? state.player.y * 0.55 : 0;
+  state.camLift += (liftTarget - state.camLift) * (1 - Math.exp(-3 * dt));
 }

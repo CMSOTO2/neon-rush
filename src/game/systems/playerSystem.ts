@@ -1,6 +1,6 @@
 'worklet';
 
-import { LANE_COUNT, LANE_WIDTH, laneX, PLAYER } from '../config';
+import { LANE_COUNT, LANE_WIDTH, laneX, PLAYER, POWER } from '../config';
 import { Action, GameEvent, Phase, type GameState } from '../types';
 import { fxRandom } from '../engine/random';
 import { burstDust, emitSparks } from './particleSystem';
@@ -43,10 +43,13 @@ export function applyAction(state: GameState, action: Action): void {
       return;
     }
     case Action.Jump:
+      // Jetpack flight owns the vertical axis.
+      if (p.flying) return;
       if (p.grounded) startJump(state);
       else p.jumpBuffer = PLAYER.jumpBufferTime;
       return;
     case Action.Slide:
+      if (p.flying) return;
       if (p.grounded) {
         startSlide(state);
       } else {
@@ -81,6 +84,12 @@ export function updatePlayer(state: GameState, dt: number): void {
   p.vx = dt > 0 ? (p.x - prevX) / dt : 0;
 
   if (state.phase === Phase.Crashing) {
+    if (state.fell) {
+      // Drop into the gap and out of sight.
+      p.vy -= PLAYER.gravity * 0.6 * dt;
+      p.y = Math.max(-4, p.y + p.vy * dt);
+      return;
+    }
     // Knock-back arc; no further control.
     if (!p.grounded) {
       p.vy -= PLAYER.gravity * dt;
@@ -97,8 +106,15 @@ export function updatePlayer(state: GameState, dt: number): void {
   if (p.stumbleTime > 0) p.stumbleTime = Math.max(0, p.stumbleTime - dt);
   if (p.landSquash > 0) p.landSquash = Math.max(0, p.landSquash - dt);
   if (p.jumpBuffer > 0) p.jumpBuffer = Math.max(0, p.jumpBuffer - dt);
+  if (p.collectFlash > 0) p.collectFlash = Math.max(0, p.collectFlash - dt);
 
-  if (!p.grounded) {
+  if (p.flying) {
+    // Climb to cruising altitude and hold it.
+    p.airTime += dt;
+    p.y += (POWER.jetpackAltitude - p.y) * (1 - Math.exp(-POWER.jetpackRiseRate * dt));
+    p.vy = 0;
+    p.grounded = false;
+  } else if (!p.grounded) {
     p.airTime += dt;
     p.vy -= PLAYER.gravity * dt;
     p.y += p.vy * dt;

@@ -1,13 +1,15 @@
 /// <reference types="bun" />
 import { describe, expect, test } from 'bun:test';
 
-import { LANE_COUNT } from '../config';
+import { LANE_COUNT, laneX, OBSTACLES, POWER } from '../config';
 import { autopilot } from './autopilot';
 import { createGameState, resetRun } from '../engine/state';
 import { stepGame } from '../engine/update';
 import { EMPTY, generateRow } from '../levels/patterns';
 import { applyAction } from '../systems/playerSystem';
-import { Action, ObstacleKind, Phase, type GameState } from '../types';
+import { activatePowerUp } from '../systems/powerUpSystem';
+import { placeCoin } from '../levels/coinPatterns';
+import { Action, ObstacleKind, Phase, PowerUpKind, type GameState } from '../types';
 
 const DT = 1 / 60;
 
@@ -178,5 +180,117 @@ describe('fairness', () => {
         failures.push(`seed ${seed} crashed at ${Math.floor(s.distance)} m`);
     }
     expect(failures).toEqual([]);
+  });
+});
+
+describe('coins and power-ups', () => {
+  test('running through a coin collects it and adds score', () => {
+    const s = freshRun();
+    placeCoin(s, laneX(1), 0.75, 20);
+    runUntil(s, 25);
+    expect(s.stats.coins).toBe(1);
+    expect(s.stats.score).toBeGreaterThanOrEqual(25 + 10);
+  });
+
+  test('coins in another lane are ignored without a magnet and pulled in with one', () => {
+    const plain = freshRun();
+    placeCoin(plain, laneX(0), 0.75, 20);
+    runUntil(plain, 25);
+    expect(plain.stats.coins).toBe(0);
+
+    const magnet = freshRun();
+    activatePowerUp(magnet, PowerUpKind.Magnet);
+    placeCoin(magnet, laneX(0), 0.75, 20);
+    runUntil(magnet, 25);
+    expect(magnet.stats.coins).toBe(1);
+  });
+
+  test('a shield absorbs one crash, smashing the obstacle', () => {
+    const s = freshRun();
+    activatePowerUp(s, PowerUpKind.Shield);
+    place(s, ObstacleKind.Barrier, 1, 20);
+    place(s, ObstacleKind.Barrier, 1, 40);
+    runUntil(s, 30);
+    expect(s.phase).toBe(Phase.Running);
+    expect(s.power[PowerUpKind.Shield]).toBe(0);
+    runUntil(s, 45);
+    expect(s.phase).toBe(Phase.Crashing);
+  });
+
+  test('the speed boost smashes through obstacles and speeds up', () => {
+    const s = freshRun();
+    activatePowerUp(s, PowerUpKind.Boost);
+    place(s, ObstacleKind.Tram, 1, 30, OBSTACLES.tram.length);
+    runUntil(s, 45);
+    expect(s.phase).toBe(Phase.Running);
+    expect(s.speed).toBeGreaterThan(13 * 1.3);
+  });
+
+  test('the jetpack flies over trams and lands safely after it ends', () => {
+    const s = freshRun();
+    activatePowerUp(s, PowerUpKind.Jetpack);
+    for (let z = 20; z < 80; z += 12) place(s, ObstacleKind.Tram, 1, z, OBSTACLES.tram.length);
+    runUntil(s, 40);
+    expect(s.player.y).toBeGreaterThan(POWER.jetpackAltitude - 1);
+    runUntil(s, 150);
+    expect(s.phase).toBe(Phase.Running);
+  });
+
+  test('the multiplier doubles distance score', () => {
+    const s = freshRun();
+    activatePowerUp(s, PowerUpKind.Multiplier);
+    runUntil(s, 50);
+    expect(s.stats.score).toBeGreaterThanOrEqual(98);
+  });
+});
+
+describe('gaps', () => {
+  test('running into a gap falls, jumping it does not', () => {
+    const fall = freshRun();
+    place(fall, ObstacleKind.Gap, 1, 20, OBSTACLES.gap.length);
+    runUntil(fall, 30);
+    expect(fall.phase).toBe(Phase.Crashing);
+    expect(fall.fell).toBe(true);
+
+    const hop = freshRun();
+    place(hop, ObstacleKind.Gap, 1, 20, OBSTACLES.gap.length);
+    let jumped = false;
+    runUntil(hop, 30, (st) => {
+      if (!jumped && st.distance > 17) {
+        applyAction(st, Action.Jump);
+        jumped = true;
+      }
+    });
+    expect(hop.phase).toBe(Phase.Running);
+  });
+});
+
+describe('coin placement', () => {
+  test('generated coins never sit inside an obstacle', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const s = createGameState(390, 844, 'nova', seed);
+      resetRun(s, Phase.Running, seed);
+      for (let i = 0; i < 60 * 60 * 3 && s.phase === Phase.Running; i++) {
+        autopilot(s);
+        stepGame(s, DT);
+        if (i % 30 !== 0) continue;
+        for (const c of s.coins) {
+          if (!c.active || c.collected || c.magnet) continue;
+          for (const o of s.obstacles) {
+            if (!o.active || o.kind === ObstacleKind.Gap) continue;
+            const hw = o.kind === ObstacleKind.Tram ? 1 : o.kind === ObstacleKind.Gate ? 1.1 : 1;
+            const inX = Math.abs(c.x - laneX(o.lane)) < hw;
+            const inZ = c.z > o.z0 - 0.2 && c.z < o.z1 + 0.2;
+            const top = o.kind === ObstacleKind.Tram ? 2.6 : o.kind === ObstacleKind.Gate ? 2.3 : 1;
+            const bottom = o.kind === ObstacleKind.Gate ? 1.2 : 0;
+            if (inX && inZ && c.y > bottom && c.y < top) {
+              throw new Error(
+                `seed ${seed}: coin at z=${c.z.toFixed(1)} y=${c.y.toFixed(2)} inside kind ${o.kind}`,
+              );
+            }
+          }
+        }
+      }
+    }
   });
 });

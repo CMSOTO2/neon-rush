@@ -31,6 +31,35 @@ export const OBSTACLES = {
   gate: { halfWidth: 1.1, beamBottom: 1.2, beamTop: 2.3, depth: 0.4 },
   // Mag-tram: blocks the whole lane, change lanes.
   tram: { halfWidth: 1.0, height: 2.6, length: 9 },
+  // Oncoming trams drive toward the runner at this fraction of run speed.
+  oncomingSpeedFactor: 0.35,
+  // Hole in the road: jump it. The runner only falls if their feet are well inside it.
+  gap: { halfWidth: 1.05, length: 2.6, fallMargin: 0.35 },
+};
+
+export const COINS = {
+  spacing: 2.1,
+  radius: 0.32,
+  height: 0.75,
+  value: 10,
+  // How close (meters) the runner must be to grab a coin.
+  pickupReachX: 0.85,
+  pickupReachZ: 0.9,
+  popTime: 0.28,
+};
+
+export const POWER = {
+  pickupInterval: [260, 420] as const,
+  firstPickup: 180,
+  pickupReach: 1.1,
+  magnetRange: 22,
+  magnetPull: 32,
+  jetpackAltitude: 5.4,
+  jetpackRiseRate: 5,
+  boostSpeedFactor: 1.7,
+  multiplier: 2,
+  // Grace after a shield break or when a jetpack/boost ends.
+  graceTime: 1.2,
 };
 
 export const WORLD = {
@@ -49,7 +78,9 @@ export const WORLD = {
 
 export const POOL_SIZES = {
   obstacles: 48,
-  particles: 64,
+  coins: 220,
+  pickups: 6,
+  particles: 96,
 };
 
 export const laneX = (lane: number): number => {

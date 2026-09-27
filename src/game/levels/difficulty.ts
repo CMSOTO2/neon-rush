@@ -22,9 +22,13 @@ export const DIFFICULTY = {
   unlock: {
     tram: 60,
     gate: 180,
+    gap: 320,
     fullRow: 450,
+    oncoming: 700,
   },
   fullRowChance: 0.14,
+  // Chance an eligible tram drives toward the runner instead of standing still.
+  oncomingChance: 0.35,
   // Never let rows get so close that a tram from one row overlaps the next.
   minRowGapMeters: 16,
 };

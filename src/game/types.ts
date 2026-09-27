@@ -23,6 +23,8 @@ export const ObstacleKind = {
   Barrier: 0,
   Gate: 1,
   Tram: 2,
+  // A hole in the road: jump it or change lanes.
+  Gap: 3,
 } as const;
 export type ObstacleKind = (typeof ObstacleKind)[keyof typeof ObstacleKind];
 
@@ -30,7 +32,20 @@ export const ParticleKind = {
   Dust: 0,
   Spark: 1,
   Star: 2,
+  Sparkle: 3,
+  Flame: 4,
+  Shard: 5,
 } as const;
+
+export const PowerUpKind = {
+  Magnet: 0,
+  Shield: 1,
+  Jetpack: 2,
+  Multiplier: 3,
+  Boost: 4,
+} as const;
+export type PowerUpKind = (typeof PowerUpKind)[keyof typeof PowerUpKind];
+export const POWERUP_COUNT = 5;
 
 // Bit flags raised during a frame and forwarded to the JS thread once per frame.
 export const GameEvent = {
@@ -42,6 +57,11 @@ export const GameEvent = {
   GameOver: 32,
   Land: 64,
   Start: 128,
+  Coin: 256,
+  PowerUp: 512,
+  ShieldBreak: 1024,
+  Smash: 2048,
+  Boost: 4096,
 } as const;
 
 export type PlayerState = {
@@ -56,11 +76,14 @@ export type PlayerState = {
   slideTime: number;
   jumpBuffer: number;
   slideAfterLanding: boolean;
+  // Jetpack flight: the runner holds altitude instead of falling.
+  flying: boolean;
   // Animation clocks.
   runPhase: number;
   airTime: number;
   landSquash: number;
   stumbleTime: number;
+  collectFlash: number;
   // Lateral velocity, used to lean into lane changes.
   vx: number;
   idleTime: number;
@@ -73,9 +96,32 @@ export type Obstacle = {
   // Near edge (toward the player) and far edge along the track.
   z0: number;
   z1: number;
+  // Oncoming trams drive toward the player (negative); everything else is 0.
+  vz: number;
   passed: boolean;
   // Stable per-obstacle random value for visual variety.
   seed: number;
+};
+
+export type Coin = {
+  active: boolean;
+  x: number;
+  y: number;
+  z: number;
+  // Time since collection; the coin pops for a moment before it is recycled.
+  collected: boolean;
+  collectTime: number;
+  // Pulled toward the runner by the magnet.
+  magnet: boolean;
+  seed: number;
+};
+
+export type Pickup = {
+  active: boolean;
+  kind: PowerUpKind;
+  lane: number;
+  y: number;
+  z: number;
 };
 
 export type Particle = {
@@ -95,10 +141,14 @@ export type Particle = {
 export type RunStats = {
   distance: number;
   score: number;
+  coins: number;
   jumps: number;
   slides: number;
   obstaclesPassed: number;
   stumbles: number;
+  powerUps: number;
+  // Distance run without any collision (missions use it later).
+  cleanDistance: number;
 };
 
 export type GameState = {
@@ -110,22 +160,43 @@ export type GameState = {
   speed: number;
   player: PlayerState;
   obstacles: Obstacle[];
+  coins: Coin[];
+  pickups: Pickup[];
   particles: Particle[];
   nextRowZ: number;
   safeLane: number;
   rowCount: number;
   // Scratch buffer for row generation (one entry per lane) so spawning never allocates.
   rowBuffer: number[];
+  // The previous two rows (lane contents and safe lane) so later rows can stay fair.
+  prevRow: number[];
+  prevRow2: number[];
+  prevRowZ: number;
+  prevSafe: number;
+  prevSafe2: number;
+  nextPickupZ: number;
+  // Power-up timers (seconds left) and the full duration for the HUD, by PowerUpKind.
+  power: number[];
+  powerFull: number[];
+  // Upgrade level per PowerUpKind (0-5), supplied by the progression system.
+  upgrades: number[];
+  // Grace period after a shield break, boost or jetpack ends.
+  invuln: number;
+  // Score accumulates fractionally so the multiplier applies smoothly.
+  scoreAcc: number;
   // Gameplay RNG (level generation) and a separate one for cosmetic effects, so particles
   // never change the obstacle layout of a seeded run.
   rng: number;
   fxRng: number;
   stats: RunStats;
   crashTime: number;
+  // True when the run ended by dropping into a gap rather than hitting something.
+  fell: boolean;
   shake: number;
   events: number;
   // Camera lateral position eases after the player.
   camX: number;
+  camLift: number;
   viewport: { width: number; height: number };
   characterId: string;
 };
