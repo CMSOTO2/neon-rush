@@ -15,7 +15,8 @@ import {
 } from '@shopify/react-native-skia';
 
 import { NEON_CITY, OBSTACLE_COLORS, UI, type EnvironmentPalette } from '../../constants/palette';
-import { getCharacter, type CharacterColors } from '../characters/characters';
+import { characterLook, type CharacterColors } from '../characters/characters';
+import { cosmetic, type Loadout } from '../../progression/cosmetics';
 import { POWERUPS } from '../powerups/powerups';
 
 // Everything the renderer needs, created once on the JS thread per viewport and then
@@ -31,6 +32,19 @@ const toColors = <T extends Record<string, unknown>>(src: T): Colors<T> => {
     out[key] = typeof v === 'string' ? Skia.Color(v) : v;
   }
   return out as Colors<T>;
+};
+
+export const ACCESSORY_CODES: Record<string, number> = {
+  none: 0,
+  headphones: 1,
+  cap: 2,
+  crown: 3,
+};
+
+const TRAIL_COLORS: Record<string, string[]> = {
+  'trail-cyan': ['#5ef2ff'],
+  'trail-fire': ['#fff3a0', '#ffb000', '#ff5a1f', '#ff2e4f'],
+  'trail-rainbow': ['#ff4f6d', '#ffb000', '#ffe14a', '#6bff7a', '#4fc3ff', '#b36bff'],
 };
 
 export type RenderResources = {
@@ -69,7 +83,12 @@ export type RenderResources = {
     gateBeam: Colors<typeof OBSTACLE_COLORS.gateBeam>;
     tram: Colors<typeof OBSTACLE_COLORS.tram>;
   };
-  character: Colors<CharacterColors> & { ears: number };
+  character: Colors<CharacterColors> & { head: number };
+  // Cosmetics: accessory code (see ACCESSORY_CODES), trail colours (empty = no trail),
+  // and the hoverboard ridden during a speed boost.
+  accessory: number;
+  trail: SkColor[];
+  board: { deck: SkColor; glow: SkColor };
   coin: { face: SkColor; rim: SkColor; inner: SkColor; shine: SkColor };
   // Power-up colours by PowerUpKind.
   power: SkColor[];
@@ -171,7 +190,7 @@ export function createRenderResources(
   horizonY: number,
   hudFont: SkFont,
   hudSmallFont: SkFont,
-  characterId: string,
+  loadout: Loadout,
 ): RenderResources {
   const env = NEON_CITY;
 
@@ -217,7 +236,8 @@ export function createRenderResources(
     TileMode.Clamp,
   );
 
-  const character = getCharacter(characterId);
+  const look = characterLook(loadout.character, loadout.outfit);
+  const boardColor = cosmetic(loadout.board)?.color ?? '#ff4fd8';
 
   return {
     width,
@@ -254,7 +274,10 @@ export function createRenderResources(
       gateBeam: toColors(OBSTACLE_COLORS.gateBeam),
       tram: toColors(OBSTACLE_COLORS.tram),
     },
-    character: { ...toColors(character.colors), ears: character.ears },
+    character: { ...toColors(look.colors), head: look.head },
+    accessory: ACCESSORY_CODES[loadout.accessory] ?? 0,
+    trail: (TRAIL_COLORS[loadout.trail] ?? []).map((c) => Skia.Color(c)),
+    board: { deck: Skia.Color(boardColor), glow: Skia.Color(boardColor) },
     coin: {
       face: Skia.Color('#ffc928'),
       rim: Skia.Color('#d98a0b'),

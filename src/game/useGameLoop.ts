@@ -7,8 +7,19 @@ import { scheduleOnRN, scheduleOnUI } from 'react-native-worklets';
 
 import { initSfx, playSfx, type SfxName } from '../audio/sfx';
 import { DEV } from '../constants/dev';
+import type { Loadout } from '../progression/cosmetics';
+import { reviveCost } from '../progression/economy';
 import { useGameStore } from '../store/gameStore';
-import { handleInput, returnToReady, setPaused, startRun, takeEvents } from './engine/controls';
+import { useProfileStore } from '../store/profileStore';
+import {
+  handleInput,
+  returnToReady,
+  reviveRun,
+  setPaused,
+  setUpgrades,
+  startRun,
+  takeEvents,
+} from './engine/controls';
 import { createRuntime, type GameRuntime } from './engine/runtime';
 import { stepGame } from './engine/update';
 import { useKeyboardControls } from './input/useKeyboardControls';
@@ -41,7 +52,7 @@ const startWithDevPower = (state: GameState): void => {
 
 // Haptics for the moments that matter; everything else stays silent on the hand.
 const haptic = (events: number) => {
-  if (Platform.OS === 'web') return;
+  if (Platform.OS === 'web' || !useProfileStore.getState().profile.settings.haptics) return;
   if (events & GameEvent.Crash) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
   } else if (events & GameEvent.ShieldBreak) {
@@ -64,6 +75,7 @@ const SOUNDS: [number, SfxName][] = [
   [GameEvent.Land, 'land'],
   [GameEvent.Stumble, 'land'],
   [GameEvent.PowerUp, 'powerup'],
+  [GameEvent.Revive, 'powerup'],
   [GameEvent.Boost, 'boost'],
   [GameEvent.ShieldBreak, 'shield'],
   [GameEvent.Smash, 'shield'],
@@ -79,9 +91,12 @@ type Options = {
   width: number;
   height: number;
   hudTop: number;
-  characterId: string;
+  loadout: Loadout;
+  upgrades: number[];
   hudFont: SkFont;
   hudSmallFont: SkFont;
+  // False while another screen (shop, settings...) is on top of the game.
+  focused: boolean;
 };
 
 // Owns the game loop: the simulation, input and Skia recording all run on the UI thread
@@ -90,37 +105,53 @@ export function useGameLoop({
   width,
   height,
   hudTop,
-  characterId,
+  loadout,
+  upgrades,
   hudFont,
   hudSmallFont,
+  focused,
 }: Options) {
   const runtime = useSharedValue<GameRuntime | null>(null);
   const picture = useSharedValue<SkPicture>(emptyPicture);
+  // Upgrade levels from the save, applied to the engine at the start of each run.
+  const upgradeLevels = useSharedValue<number[]>(upgrades);
+  useEffect(() => {
+    upgradeLevels.set(upgrades);
+  }, [upgradeLevels, upgrades]);
 
+  const { character, outfit, accessory, trail, board } = loadout;
   const resources = useMemo(() => {
     const horizonY = createCamera(width, height).horizonY;
-    return createRenderResources(
-      width,
-      height,
-      hudTop,
-      horizonY,
-      hudFont,
-      hudSmallFont,
-      characterId,
-    );
-  }, [width, height, hudTop, hudFont, hudSmallFont, characterId]);
+    return createRenderResources(width, height, hudTop, horizonY, hudFont, hudSmallFont, {
+      character,
+      outfit,
+      accessory,
+      trail,
+      board,
+    });
+  }, [width, height, hudTop, hudFont, hudSmallFont, character, outfit, accessory, trail, board]);
 
   // The runtime is built on the UI thread so the worklets own a plain mutable object.
   useEffect(() => {
     scheduleOnUI(() => {
       'worklet';
-      runtime.set(createRuntime(width, height, characterId, newSeed()));
+      runtime.set(createRuntime(width, height, '', newSeed()));
     });
-  }, [runtime, width, height, characterId]);
+  }, [runtime, width, height]);
 
   useEffect(() => {
     initSfx();
   }, []);
+
+  const beginRun = useCallback(
+    (rt: GameRuntime) => {
+      'worklet';
+      setUpgrades(rt.state, upgradeLevels.get());
+      startRun(rt.state, newSeed());
+      startWithDevPower(rt.state);
+    },
+    [upgradeLevels],
+  );
 
   // Dev builds can start a run automatically (EXPO_PUBLIC_AUTOSTART=1) for testing
   // without touch input, e.g. on a simulator.
@@ -130,21 +161,20 @@ export function useGameLoop({
       scheduleOnUI(() => {
         'worklet';
         const rt = runtime.get();
-        if (!rt) return;
-        startRun(rt.state, newSeed());
-        startWithDevPower(rt.state);
+        if (rt) beginRun(rt);
       });
     }, 1500);
     return () => clearTimeout(t);
-  }, [runtime]);
+  }, [runtime, beginRun]);
 
-  const onEvents = useCallback((events: number, stats: RunStats | null) => {
+  const onEvents = useCallback((events: number, stats: RunStats | null, revives: number) => {
     haptic(events);
     playEventSounds(events);
     const store = useGameStore.getState();
     if (events & GameEvent.Start) store.setPhase('running');
+    if (events & GameEvent.Revive) store.setPhase('running');
     if (events & GameEvent.GameOver && stats) {
-      store.finishRun({
+      const run = {
         score: stats.score,
         distance: stats.distance,
         coins: stats.coins,
@@ -153,7 +183,13 @@ export function useGameLoop({
         obstaclesPassed: stats.obstaclesPassed,
         stumbles: stats.stumbles,
         powerUps: stats.powerUps,
-      });
+        bestCleanDistance: stats.bestCleanDistance,
+      };
+      // Offer a continue if the player can afford it; otherwise the run is over.
+      const cost = reviveCost(revives);
+      const coins = useProfileStore.getState().profile.coins;
+      if (cost !== null && coins >= cost) store.offerRevive(run, revives);
+      else store.finishRun(run);
     }
   }, []);
 
@@ -164,13 +200,16 @@ export function useGameLoop({
       if (!rt) return;
       const dt = ((info.timeSincePreviousFrame ?? 16) / 1000) * DEV.timeScale;
       const state = rt.state;
-      if (DEV_INVINCIBLE && state.phase === Phase.Running)
+      if (DEV_INVINCIBLE && state.phase === Phase.Running) {
         state.invuln = Math.max(state.invuln, 0.2);
+      }
       stepGame(state, dt);
 
       const ev = takeEvents(state);
       // Stats are only copied across threads when the run ends.
-      if (ev !== 0) scheduleOnRN(onEvents, ev, ev & GameEvent.GameOver ? state.stats : null);
+      if (ev !== 0) {
+        scheduleOnRN(onEvents, ev, ev & GameEvent.GameOver ? state.stats : null, state.revives);
+      }
 
       const canvas = resources.recorder.beginRecording(resources.bounds);
       renderFrame(canvas, state, rt.render, resources);
@@ -186,21 +225,17 @@ export function useGameLoop({
       'worklet';
       const rt = runtime.get();
       if (!rt) return;
-      const wasReady = rt.state.phase === Phase.Ready;
-      handleInput(rt.state, action, newSeed());
-      if (wasReady) startWithDevPower(rt.state);
+      if (rt.state.phase === Phase.Ready) beginRun(rt);
+      else handleInput(rt.state, action, newSeed());
     },
-    [runtime],
+    [runtime, beginRun],
   );
 
   const tapToStart = useCallback(() => {
     'worklet';
     const rt = runtime.get();
-    if (rt && rt.state.phase === Phase.Ready) {
-      startRun(rt.state, newSeed());
-      startWithDevPower(rt.state);
-    }
-  }, [runtime]);
+    if (rt && rt.state.phase === Phase.Ready) beginRun(rt);
+  }, [runtime, beginRun]);
 
   const gesture = useSwipeGesture(width, dispatch, tapToStart);
 
@@ -209,7 +244,7 @@ export function useGameLoop({
     (action: Action) => scheduleOnUI(dispatch, action),
     [dispatch],
   );
-  useKeyboardControls(keyboardDispatch, phase === 'ready' || phase === 'running');
+  useKeyboardControls(keyboardDispatch, focused && (phase === 'ready' || phase === 'running'));
 
   const controls = useMemo(() => {
     const onUI = (fn: (rt: GameRuntime) => void) =>
@@ -220,10 +255,7 @@ export function useGameLoop({
       });
     return {
       start: () => {
-        onUI((rt) => {
-          'worklet';
-          startRun(rt.state, newSeed());
-        });
+        onUI(beginRun);
         // Set here too: when restarting from pause the loop is stopped until this changes.
         useGameStore.getState().setPhase('running');
       },
@@ -241,6 +273,20 @@ export function useGameLoop({
         });
         useGameStore.getState().setPhase('running');
       },
+      revive: () => {
+        const { revivesUsed, setPhase } = useGameStore.getState();
+        const cost = reviveCost(revivesUsed);
+        if (cost === null || !useProfileStore.getState().spendCoins(cost)) return;
+        onUI((rt) => {
+          'worklet';
+          reviveRun(rt.state);
+        });
+        setPhase('running');
+      },
+      declineRevive: () => {
+        const { pendingRun, finishRun } = useGameStore.getState();
+        if (pendingRun) finishRun(pendingRun);
+      },
       toMenu: () => {
         onUI((rt) => {
           'worklet';
@@ -249,7 +295,7 @@ export function useGameLoop({
         useGameStore.getState().setPhase('ready');
       },
     };
-  }, [runtime]);
+  }, [runtime, beginRun]);
 
   // Pause automatically when the app goes to the background mid-run.
   useEffect(() => {
@@ -259,10 +305,10 @@ export function useGameLoop({
     return () => sub.remove();
   }, [controls]);
 
-  // Stop the loop entirely while paused to save battery; the last frame stays on screen.
+  // Stop the loop while paused or while another screen covers the game, to save battery.
   useEffect(() => {
-    frame.setActive(phase !== 'paused');
-  }, [frame, phase]);
+    frame.setActive(focused && phase !== 'paused');
+  }, [frame, phase, focused]);
 
   return { picture, gesture, controls };
 }

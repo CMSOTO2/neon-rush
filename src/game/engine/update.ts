@@ -43,6 +43,9 @@ export function stepGame(state: GameState, frameDt: number): void {
       state.distance += step;
       state.scoreAcc += step * mult;
       state.stats.cleanDistance += step;
+      if (state.stats.cleanDistance > state.stats.bestCleanDistance) {
+        state.stats.bestCleanDistance = state.stats.cleanDistance;
+      }
       moveObstacles(state, h);
       updatePlayer(state, h);
       checkCollisions(state, prevDistance, prevX, h);
@@ -65,6 +68,19 @@ export function stepGame(state: GameState, frameDt: number): void {
   } else {
     updatePlayer(state, dt);
   }
+
+  // Sample the trail every half meter so its points line up with how it's drawn.
+  const tx = state.trailX;
+  const ty = state.trailY;
+  if (state.distance - state.trailAt >= 0.5) {
+    state.trailAt = state.distance;
+    for (let i = tx.length - 1; i > 0; i--) {
+      tx[i] = tx[i - 1];
+      ty[i] = ty[i - 1];
+    }
+  }
+  tx[0] = state.player.x;
+  ty[0] = state.player.y;
 
   updateParticles(state, dt);
   state.shake = Math.max(0, state.shake - dt * 2.5);

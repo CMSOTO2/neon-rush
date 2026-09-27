@@ -1,4 +1,5 @@
 import { Canvas, Picture, useFont, type SkFont } from '@shopify/react-native-skia';
+import { useIsFocused } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
@@ -7,12 +8,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GameOverOverlay } from '../components/GameOverOverlay';
 import { PauseButton } from '../components/PauseButton';
 import { PauseOverlay } from '../components/PauseOverlay';
-import { TitleOverlay } from '../components/TitleOverlay';
+import { MainMenu } from '../components/MainMenu';
+import { ReviveOverlay } from '../components/ReviveOverlay';
 import { HUD_FONT_FILE } from '../constants/fonts';
 import { NEON_CITY } from '../constants/palette';
-import { DEFAULT_CHARACTER_ID } from '../game/characters/characters';
 import { useGameLoop } from '../game/useGameLoop';
+import { reviveCost } from '../progression/economy';
 import { useGameStore } from '../store/gameStore';
+import { useProfileStore } from '../store/profileStore';
 
 export function GameScreen() {
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
@@ -24,7 +27,9 @@ export function GameScreen() {
     if (!size || size.width !== width || size.height !== height) setSize({ width, height });
   };
 
-  const ready = size && hudFont && hudSmallFont;
+  // Wait for the saved profile so the menu never flashes empty values.
+  const hydrated = useProfileStore((s) => s.hydrated);
+  const ready = size && hudFont && hudSmallFont && hydrated;
   return (
     <View style={styles.root} onLayout={onLayout}>
       {ready && (
@@ -45,19 +50,26 @@ type GameProps = { width: number; height: number; hudFont: SkFont; hudSmallFont:
 
 function Game({ width, height, hudFont, hudSmallFont }: GameProps) {
   const insets = useSafeAreaInsets();
+  const focused = useIsFocused();
   const phase = useGameStore((s) => s.phase);
   const lastRun = useGameStore((s) => s.lastRun);
-  const lastRunWasBest = useGameStore((s) => s.lastRunWasBest);
-  const bestScore = useGameStore((s) => s.bestScore);
+  const rewards = useGameStore((s) => s.rewards);
+  const revivesUsed = useGameStore((s) => s.revivesUsed);
+  const loadout = useProfileStore((s) => s.profile.loadout);
+  const upgrades = useProfileStore((s) => s.profile.upgrades);
 
   const { picture, gesture, controls } = useGameLoop({
     width,
     height,
     hudTop: insets.top,
-    characterId: DEFAULT_CHARACTER_ID,
+    loadout,
+    upgrades,
     hudFont,
     hudSmallFont,
+    focused,
   });
+
+  const cost = reviveCost(revivesUsed);
 
   return (
     <View style={StyleSheet.absoluteFill}>
@@ -69,7 +81,9 @@ function Game({ width, height, hudFont, hudSmallFont }: GameProps) {
         </View>
       </GestureDetector>
 
-      {phase === 'ready' && <TitleOverlay top={insets.top} best={bestScore} />}
+      {phase === 'ready' && (
+        <MainMenu top={insets.top} bottom={insets.bottom} onPlay={controls.start} />
+      )}
       {phase === 'running' && <PauseButton top={insets.top + 12} onPress={controls.pause} />}
       {phase === 'paused' && (
         <PauseOverlay
@@ -78,11 +92,13 @@ function Game({ width, height, hudFont, hudSmallFont }: GameProps) {
           onMenu={controls.toMenu}
         />
       )}
+      {phase === 'revive' && cost !== null && (
+        <ReviveOverlay cost={cost} onRevive={controls.revive} onDecline={controls.declineRevive} />
+      )}
       {phase === 'over' && lastRun && (
         <GameOverOverlay
           result={lastRun}
-          isBest={lastRunWasBest}
-          bestScore={bestScore}
+          rewards={rewards}
           onRestart={controls.start}
           onMenu={controls.toMenu}
         />

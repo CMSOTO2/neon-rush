@@ -129,13 +129,18 @@ export function createGameState(
       stumbles: 0,
       powerUps: 0,
       cleanDistance: 0,
+      bestCleanDistance: 0,
     },
     crashTime: 0,
+    revives: 0,
     fell: false,
     shake: 0,
     events: 0,
     camX: 0,
     camLift: 0,
+    trailX: filled(14, 0),
+    trailY: filled(14, 0),
+    trailAt: 0,
     viewport: { width, height },
     characterId,
   };
@@ -193,11 +198,17 @@ export function resetRun(state: GameState, phase: Phase, seed: number): void {
   state.rng = seed | 0;
   state.fxRng = (seed ^ 0x5bd1e995) | 0;
   state.crashTime = 0;
+  state.revives = 0;
   state.fell = false;
   state.shake = 0;
   state.events = 0;
   state.camX = p.x;
   state.camLift = 0;
+  state.trailAt = 0;
+  for (let i = 0; i < state.trailX.length; i++) {
+    state.trailX[i] = p.x;
+    state.trailY[i] = 0;
+  }
 
   const s = state.stats;
   s.distance = 0;
@@ -209,4 +220,5 @@ export function resetRun(state: GameState, phase: Phase, seed: number): void {
   s.stumbles = 0;
   s.powerUps = 0;
   s.cleanDistance = 0;
+  s.bestCleanDistance = 0;
 }

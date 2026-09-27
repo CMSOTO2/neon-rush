@@ -1,12 +1,48 @@
 'worklet';
 
 import { applyAction } from '../systems/playerSystem';
-import { GameEvent, Phase, type Action, type GameState } from '../types';
+import { speedAt } from '../levels/difficulty';
+import { activatePowerUp } from '../systems/powerUpSystem';
+import { GameEvent, Phase, PowerUpKind, type Action, type GameState } from '../types';
 import { resetRun } from './state';
 
 export function startRun(state: GameState, seed: number): void {
   resetRun(state, Phase.Running, seed);
   state.events |= GameEvent.Start;
+  // The Starting Boost upgrade launches every run with a speed boost.
+  if (state.upgrades[PowerUpKind.Boost] > 0) activatePowerUp(state, PowerUpKind.Boost, false);
+}
+
+// Upgrade levels come from the saved profile; they apply from the next run.
+export function setUpgrades(state: GameState, levels: number[]): void {
+  for (let i = 0; i < state.upgrades.length; i++) state.upgrades[i] = levels[i] ?? 0;
+}
+
+// Continue after a crash: clear the way ahead, give a moment of grace, keep going.
+export function reviveRun(state: GameState): void {
+  if (state.phase !== Phase.Over && state.phase !== Phase.Crashing) return;
+  const d = state.distance;
+  for (let i = 0; i < state.obstacles.length; i++) {
+    const o = state.obstacles[i];
+    if (o.active && o.z1 > d - 3 && o.z0 < d + 35) o.active = false;
+  }
+  const p = state.player;
+  p.y = 0;
+  p.vy = 0;
+  p.grounded = true;
+  p.sliding = false;
+  p.flying = false;
+  p.stumbleTime = 0;
+  p.targetLane = p.lane;
+  for (let i = 0; i < state.power.length; i++) state.power[i] = 0;
+  state.phase = Phase.Running;
+  state.crashTime = 0;
+  state.fell = false;
+  state.revives++;
+  state.invuln = 2.5;
+  state.speed = speedAt(d) * 0.8;
+  state.stats.cleanDistance = 0;
+  state.events |= GameEvent.Revive;
 }
 
 export function returnToReady(state: GameState, seed: number): void {

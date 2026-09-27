@@ -13,6 +13,8 @@ import { NEON_CITY } from '../constants/palette';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+const MENU_SCREENS = ['shop', 'characters', 'missions', 'achievements', 'settings'];
+
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(FONT_SOURCES);
   const done = fontsLoaded || !!fontError;
@@ -34,7 +36,12 @@ export default function RootLayout() {
               animation: 'fade',
               contentStyle: { backgroundColor: NEON_CITY.ground },
             }}
-          />
+          >
+            <Stack.Screen name="index" />
+            {MENU_SCREENS.map((name) => (
+              <Stack.Screen key={name} name={name} options={{ animation: 'slide_from_bottom' }} />
+            ))}
+          </Stack>
         </WebPhoneFrame>
       </SafeAreaProvider>
     </GestureHandlerRootView>

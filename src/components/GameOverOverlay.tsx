@@ -1,34 +1,73 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import type { ComponentProps } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 import { FONTS } from '../constants/fonts';
 import { UI } from '../constants/palette';
+import type { RunRewards } from '../progression/applyRun';
+import { cosmetic } from '../progression/cosmetics';
+import { missionText } from '../progression/missions';
 import type { RunResult } from '../store/gameStore';
+import { useProfileStore } from '../store/profileStore';
+import { CoinIcon } from './ui/CoinPill';
+import { LevelBadge } from './ui/LevelBadge';
 import { NeonButton } from './NeonButton';
 import { Panel } from './Panel';
 
 type Props = {
   result: RunResult;
-  isBest: boolean;
-  bestScore: number;
+  rewards: RunRewards | null;
   onRestart: () => void;
   onMenu: () => void;
 };
 
-export function GameOverOverlay({ result, isBest, bestScore, onRestart, onMenu }: Props) {
+type Line = { icon: ComponentProps<typeof Ionicons>['name']; text: string; color: string };
+
+function rewardLines(r: RunRewards): Line[] {
+  const lines: Line[] = [];
+  if (r.levelAfter > r.levelBefore) {
+    lines.push({
+      icon: 'arrow-up-circle',
+      text: `Level up! Now level ${r.levelAfter}`,
+      color: UI.accentHot,
+    });
+  }
+  if (r.dailyCompleted) {
+    lines.push({ icon: 'flame', text: `Daily challenge done  +${r.dailyReward}`, color: UI.gold });
+  }
+  for (const m of r.missionsCompleted) {
+    lines.push({ icon: 'flag', text: `${missionText(m)}  +${m.reward}`, color: UI.accent });
+  }
+  for (const a of r.achievementsUnlocked) {
+    lines.push({ icon: 'trophy', text: `${a.name}  +${a.reward}`, color: UI.gold });
+  }
+  for (const id of r.newlyOwned) {
+    const item = cosmetic(id);
+    if (item) lines.push({ icon: 'gift', text: `Unlocked ${item.name}`, color: UI.accentHot });
+  }
+  return lines;
+}
+
+export function GameOverOverlay({ result, rewards, onRestart, onMenu }: Props) {
+  const xp = useProfileStore((s) => s.profile.xp);
+  const best = useProfileStore((s) => s.profile.life.bestScore);
+  const lines = rewards ? rewardLines(rewards) : [];
+  const shown = lines.slice(0, 4);
+
   return (
     <Panel title="CRASHED!" titleColor={UI.accentHot}>
       <View style={styles.scoreBlock}>
         <Text style={styles.scoreLabel}>SCORE</Text>
-        <Text style={styles.score}>{result.score}</Text>
-        {isBest ? (
+        <Text style={styles.score}>{result.score.toLocaleString()}</Text>
+        {rewards?.newBestScore ? (
           <Animated.View entering={ZoomIn.delay(250).springify()}>
             <View style={styles.badge}>
               <Text style={styles.badgeText}>NEW BEST!</Text>
             </View>
           </Animated.View>
         ) : (
-          <Text style={styles.bestLine}>Best {bestScore}</Text>
+          <Text style={styles.bestLine}>Best {best.toLocaleString()}</Text>
         )}
       </View>
 
@@ -37,6 +76,34 @@ export function GameOverOverlay({ result, isBest, bestScore, onRestart, onMenu }
         <Stat label="Coins" value={String(result.coins)} color={UI.gold} />
         <Stat label="Dodged" value={String(result.obstaclesPassed)} />
       </View>
+
+      {rewards && (
+        <View style={styles.earned}>
+          <CoinIcon size={20} />
+          <Text style={styles.earnedText}>
+            +{(rewards.coinsFromRun + rewards.bonusCoins).toLocaleString()}
+          </Text>
+          <Text style={styles.xpText}>+{rewards.xpEarned} XP</Text>
+          <View style={styles.flex} />
+          <LevelBadge xp={xp} />
+        </View>
+      )}
+
+      {shown.map((line, i) => (
+        <Animated.View
+          key={`${line.text}-${i}`}
+          entering={FadeInDown.delay(200 + i * 120)}
+          style={styles.line}
+        >
+          <Ionicons name={line.icon} size={18} color={line.color} />
+          <Text style={styles.lineText} numberOfLines={1}>
+            {line.text}
+          </Text>
+        </Animated.View>
+      ))}
+      {lines.length > shown.length && (
+        <Text style={styles.more}>+{lines.length - shown.length} more</Text>
+      )}
 
       <NeonButton label="RUN AGAIN" onPress={onRestart} />
       <NeonButton label="MENU" variant="secondary" onPress={onMenu} />
@@ -56,7 +123,7 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
 const styles = StyleSheet.create({
   scoreBlock: { alignItems: 'center' },
   scoreLabel: { fontFamily: FONTS.semibold, fontSize: 14, color: UI.textDim, letterSpacing: 3 },
-  score: { fontFamily: FONTS.bold, fontSize: 60, color: UI.text, lineHeight: 66 },
+  score: { fontFamily: FONTS.bold, fontSize: 54, color: UI.text, lineHeight: 60 },
   bestLine: { fontFamily: FONTS.medium, fontSize: 16, color: UI.textDim },
   badge: {
     backgroundColor: UI.gold,
@@ -71,11 +138,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: 'rgba(123, 92, 255, 0.14)',
     borderRadius: 18,
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 8,
-    marginBottom: 6,
   },
   stat: { flex: 1, alignItems: 'center' },
   statValue: { fontFamily: FONTS.bold, fontSize: 20, color: UI.accent },
   statLabel: { fontFamily: FONTS.medium, fontSize: 13, color: UI.textDim },
+  earned: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  earnedText: { fontFamily: FONTS.bold, fontSize: 20, color: UI.gold },
+  xpText: { fontFamily: FONTS.semibold, fontSize: 15, color: UI.accentHot },
+  flex: { flex: 1 },
+  line: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  lineText: { flex: 1, fontFamily: FONTS.medium, fontSize: 14, color: UI.text },
+  more: { fontFamily: FONTS.medium, fontSize: 13, color: UI.textDim, textAlign: 'center' },
 });

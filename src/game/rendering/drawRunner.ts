@@ -3,6 +3,7 @@
 import type { SkCanvas, SkColor } from '@shopify/react-native-skia';
 
 import { PLAYER } from '../config';
+import { HeadStyle } from '../characters/characters';
 import { Phase, PowerUpKind, type GameState } from '../types';
 import { scaleAt, sx, sy, type Camera } from './camera';
 import type { RenderResources } from './resources';
@@ -70,6 +71,175 @@ const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi 
 const crashedPhase = (state: GameState) =>
   state.phase === Phase.Crashing || state.phase === Phase.Over;
 
+// Hood silhouette (per character), visor strap and head accessory, seen from behind.
+function drawHead(
+  canvas: SkCanvas,
+  res: RenderResources,
+  hx: number,
+  hy: number,
+  alpha: number,
+  t: number,
+): void {
+  const c = res.character;
+  const hr = 0.28;
+  switch (c.head) {
+    case HeadStyle.FoxEars:
+      tri(
+        canvas,
+        res,
+        hx - 0.26,
+        hy + 0.08,
+        hx - 0.22,
+        hy + 0.44,
+        hx - 0.02,
+        hy + 0.22,
+        c.jacket,
+        alpha,
+      );
+      tri(
+        canvas,
+        res,
+        hx + 0.26,
+        hy + 0.08,
+        hx + 0.22,
+        hy + 0.44,
+        hx + 0.02,
+        hy + 0.22,
+        c.jacket,
+        alpha,
+      );
+      tri(
+        canvas,
+        res,
+        hx - 0.2,
+        hy + 0.16,
+        hx - 0.19,
+        hy + 0.36,
+        hx - 0.08,
+        hy + 0.24,
+        c.trim,
+        alpha,
+      );
+      tri(
+        canvas,
+        res,
+        hx + 0.2,
+        hy + 0.16,
+        hx + 0.19,
+        hy + 0.36,
+        hx + 0.08,
+        hy + 0.24,
+        c.trim,
+        alpha,
+      );
+      break;
+    case HeadStyle.Antenna: {
+      const sway = Math.sin(t * 7) * 0.04;
+      limb(canvas, res, hx + 0.1, hy + 0.2, hx + 0.16 + sway, hy + 0.52, 0.035, c.trim, alpha);
+      dot(canvas, res, hx + 0.16 + sway, hy + 0.54, 0.06, c.visor, alpha);
+      break;
+    }
+    case HeadStyle.PomBeanie:
+      dot(canvas, res, hx, hy + 0.34, 0.1, c.trim, alpha);
+      break;
+    case HeadStyle.DinoSpikes:
+      for (let i = 0; i < 3; i++) {
+        const y = hy + 0.26 - i * 0.16;
+        tri(canvas, res, hx - 0.07, y - 0.05, hx + 0.07, y - 0.05, hx, y + 0.12, c.trim, alpha);
+      }
+      break;
+  }
+  dot(canvas, res, hx, hy, hr, c.jacket, alpha);
+  dot(canvas, res, hx, hy - 0.05, hr * 0.8, c.jacketShade, alpha * 0.35);
+  if (c.head === HeadStyle.PomBeanie) {
+    // Ribbed beanie band.
+    limb(canvas, res, hx - hr * 0.92, hy + 0.08, hx + hr * 0.92, hy + 0.08, 0.08, c.trim, alpha);
+  }
+  limb(canvas, res, hx - hr * 0.95, hy - 0.02, hx + hr * 0.95, hy - 0.02, 0.07, c.visor, alpha);
+  dot(canvas, res, hx - hr * 0.98, hy - 0.02, 0.07, c.visor, alpha);
+  dot(canvas, res, hx + hr * 0.98, hy - 0.02, 0.07, c.visor, alpha);
+
+  switch (res.accessory) {
+    case 1: {
+      // Headphones: band over the top, cups on the sides.
+      const hp = res.ui.accent;
+      const pb = res.pb;
+      pb.moveTo(hx - hr * 1.02, hy);
+      for (let i = 1; i <= 8; i++) {
+        const a = Math.PI - (i / 8) * Math.PI;
+        pb.lineTo(hx + Math.cos(a) * hr * 1.02, hy + Math.sin(a) * hr * 1.05);
+      }
+      res.stroke.setColor(hp);
+      res.stroke.setAlphaf(alpha);
+      res.stroke.setStrokeWidth(0.05);
+      canvas.drawPath(pb.detach(), res.stroke);
+      limb(canvas, res, hx - hr * 1.04, hy - 0.06, hx - hr * 1.04, hy + 0.05, 0.13, hp, alpha);
+      limb(canvas, res, hx + hr * 1.04, hy - 0.06, hx + hr * 1.04, hy + 0.05, 0.13, hp, alpha);
+      break;
+    }
+    case 2:
+      // Backwards snapback: crown of the cap plus the brim pointing at the camera.
+      dot(canvas, res, hx, hy + 0.1, hr * 0.92, res.gap.rim, alpha);
+      limb(canvas, res, hx - 0.14, hy - 0.02, hx + 0.14, hy - 0.02, 0.09, res.gap.rim, alpha);
+      dot(canvas, res, hx, hy + 0.1, 0.05, res.ui.white, alpha);
+      break;
+    case 3:
+      // Crown.
+      tri(
+        canvas,
+        res,
+        hx - 0.2,
+        hy + 0.2,
+        hx - 0.12,
+        hy + 0.2,
+        hx - 0.19,
+        hy + 0.42,
+        res.ui.gold,
+        alpha,
+      );
+      tri(canvas, res, hx - 0.06, hy + 0.2, hx + 0.06, hy + 0.2, hx, hy + 0.47, res.ui.gold, alpha);
+      tri(
+        canvas,
+        res,
+        hx + 0.12,
+        hy + 0.2,
+        hx + 0.2,
+        hy + 0.2,
+        hx + 0.19,
+        hy + 0.42,
+        res.ui.gold,
+        alpha,
+      );
+      limb(canvas, res, hx - 0.2, hy + 0.21, hx + 0.2, hy + 0.21, 0.07, res.ui.gold, alpha);
+      dot(canvas, res, hx, hy + 0.24, 0.035, res.gap.rim, alpha);
+      break;
+  }
+}
+
+// Ribbon of glowing dots trailing from the runner's feet, following recent positions.
+function drawTrail(canvas: SkCanvas, res: RenderResources, cam: Camera, state: GameState): void {
+  const colors = res.trail;
+  if (colors.length === 0 || state.phase !== Phase.Running) return;
+  const tx = state.trailX;
+  const ty = state.trailY;
+  for (let i = tx.length - 1; i >= 1; i--) {
+    const z = state.distance - i * 0.5;
+    const s = scaleAt(cam, z);
+    if (s <= 0) continue;
+    const k = 1 - i / tx.length;
+    const color = colors[(i + Math.floor(state.time * 12)) % colors.length];
+    dot(
+      canvas,
+      res,
+      sx(cam, tx[i], s),
+      sy(cam, ty[i] + 0.12, s),
+      0.16 * s * k + 1,
+      color,
+      0.75 * k,
+    );
+  }
+}
+
 export function drawRunner(
   canvas: SkCanvas,
   res: RenderResources,
@@ -100,6 +270,8 @@ export function drawRunner(
     canvas.drawCircle(0, 0, (0.7 + pulse * 1.6) * s, res.stroke);
   }
   canvas.restore();
+
+  drawTrail(canvas, res, cam, state);
 
   // Pose defaults: standing.
   let hipY = 0.8;
@@ -221,6 +393,28 @@ export function drawRunner(
       sqY = 1.12;
       sqX = 0.92;
     }
+  } else if (state.power[PowerUpKind.Boost] > 0) {
+    // Riding the hoverboard: knees bent, feet planted wide, arms out for balance.
+    const sway = Math.sin(t * 6) * 0.03;
+    hipY = 0.68 + sway;
+    chestY = 1.14 + sway;
+    headY = 1.44 + sway;
+    lFx = -0.3;
+    rFx = 0.3;
+    lFy = 0.22;
+    rFy = 0.22;
+    lKx = -0.3;
+    rKx = 0.3;
+    lKy = 0.44;
+    rKy = 0.44;
+    lHx = -0.62;
+    rHx = 0.6;
+    lHy = 0.95;
+    rHy = 1.05;
+    lEx = -0.42;
+    rEx = 0.42;
+    lEy = 1.05;
+    rEy = 1.1;
   } else {
     const ph = p.runPhase;
     const sn = Math.sin(ph);
@@ -276,6 +470,14 @@ export function drawRunner(
     dot(canvas, res, 0, 0.95, 0.7 * flick, res.power[PowerUpKind.Boost], 0.25);
   }
 
+  // Hoverboard under the feet while boosting.
+  if (state.power[PowerUpKind.Boost] > 0 && !p.flying && !crashed) {
+    const hover = 0.1 + Math.sin(t * 9) * 0.02;
+    dot(canvas, res, 0, hover, 0.75, res.board.glow, 0.18);
+    limb(canvas, res, -0.62, hover + 0.12, 0.62, hover + 0.12, 0.2, res.board.deck, alpha);
+    limb(canvas, res, -0.5, hover + 0.05, 0.5, hover + 0.05, 0.05, res.ui.white, alpha * 0.8);
+  }
+
   // Legs and shoes.
   limb(canvas, res, -0.12, hipY, lKx, lKy, 0.21, c.pants, alpha);
   limb(canvas, res, lKx, lKy, lFx, lFy + 0.08, 0.19, c.pants, alpha);
@@ -299,73 +501,7 @@ export function drawRunner(
   limb(canvas, res, 0, hipY + 0.12, 0, chestY - 0.08, 0.54, c.jacket, alpha);
   limb(canvas, res, -0.2, hipY + 0.04, 0.2, hipY + 0.04, 0.09, c.trim, alpha);
 
-  // Hood with fox ears and a glowing visor strap.
-  const hr = 0.28;
-  if (c.ears === 1) {
-    tri(
-      canvas,
-      res,
-      headX - 0.26,
-      headY + 0.08,
-      headX - 0.22,
-      headY + 0.44,
-      headX - 0.02,
-      headY + 0.22,
-      c.jacket,
-      alpha,
-    );
-    tri(
-      canvas,
-      res,
-      headX + 0.26,
-      headY + 0.08,
-      headX + 0.22,
-      headY + 0.44,
-      headX + 0.02,
-      headY + 0.22,
-      c.jacket,
-      alpha,
-    );
-    tri(
-      canvas,
-      res,
-      headX - 0.2,
-      headY + 0.16,
-      headX - 0.19,
-      headY + 0.36,
-      headX - 0.08,
-      headY + 0.24,
-      c.trim,
-      alpha,
-    );
-    tri(
-      canvas,
-      res,
-      headX + 0.2,
-      headY + 0.16,
-      headX + 0.19,
-      headY + 0.36,
-      headX + 0.08,
-      headY + 0.24,
-      c.trim,
-      alpha,
-    );
-  }
-  dot(canvas, res, headX, headY, hr, c.jacket, alpha);
-  dot(canvas, res, headX, headY - 0.05, hr * 0.8, c.jacketShade, alpha * 0.35);
-  limb(
-    canvas,
-    res,
-    headX - hr * 0.95,
-    headY - 0.02,
-    headX + hr * 0.95,
-    headY - 0.02,
-    0.07,
-    c.visor,
-    alpha,
-  );
-  dot(canvas, res, headX - hr * 0.98, headY - 0.02, 0.07, c.visor, alpha);
-  dot(canvas, res, headX + hr * 0.98, headY - 0.02, 0.07, c.visor, alpha);
+  drawHead(canvas, res, headX, headY, alpha, t);
 
   if (p.collectFlash > 0) {
     dot(canvas, res, 0, chestY - 0.2, 0.55 * (p.collectFlash / 0.15), res.ui.gold, 0.35);

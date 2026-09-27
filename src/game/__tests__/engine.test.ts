@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test';
 
 import { LANE_COUNT, laneX, OBSTACLES, POWER } from '../config';
 import { autopilot } from './autopilot';
+import { reviveRun, setUpgrades, startRun } from '../engine/controls';
 import { createGameState, resetRun } from '../engine/state';
 import { stepGame } from '../engine/update';
 import { EMPTY, generateRow } from '../levels/patterns';
@@ -292,5 +293,33 @@ describe('coin placement', () => {
         }
       }
     }
+  });
+});
+
+describe('revive and starting boost', () => {
+  test('reviving clears the way and the run continues', () => {
+    const s = freshRun();
+    place(s, ObstacleKind.Barrier, 1, 20);
+    place(s, ObstacleKind.Tram, 1, 30, OBSTACLES.tram.length);
+    runUntil(s, 30);
+    expect(s.phase).toBe(Phase.Crashing);
+    for (let i = 0; i < 90; i++) stepGame(s, DT);
+    expect(s.phase).toBe(Phase.Over);
+    reviveRun(s);
+    expect(s.phase).toBe(Phase.Running);
+    expect(s.revives).toBe(1);
+    runUntil(s, 60);
+    expect(s.phase).toBe(Phase.Running);
+  });
+
+  test('the Starting Boost upgrade launches runs boosted without counting as a pickup', () => {
+    const s = createGameState(390, 844, 'nova', 3);
+    setUpgrades(s, [0, 0, 0, 0, 2]);
+    startRun(s, 3);
+    expect(s.power[PowerUpKind.Boost]).toBeGreaterThan(0);
+    expect(s.stats.powerUps).toBe(0);
+    setUpgrades(s, [0, 0, 0, 0, 0]);
+    startRun(s, 3);
+    expect(s.power[PowerUpKind.Boost]).toBe(0);
   });
 });

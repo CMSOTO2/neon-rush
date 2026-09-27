@@ -62,6 +62,7 @@ export const GameEvent = {
   ShieldBreak: 1024,
   Smash: 2048,
   Boost: 4096,
+  Revive: 8192,
 } as const;
 
 export type PlayerState = {
@@ -147,8 +148,9 @@ export type RunStats = {
   obstaclesPassed: number;
   stumbles: number;
   powerUps: number;
-  // Distance run without any collision (missions use it later).
+  // Distance since the last collision, and the longest such stretch this run.
   cleanDistance: number;
+  bestCleanDistance: number;
 };
 
 export type GameState = {
@@ -190,6 +192,8 @@ export type GameState = {
   fxRng: number;
   stats: RunStats;
   crashTime: number;
+  // Continues used this run (each one costs more).
+  revives: number;
   // True when the run ended by dropping into a gap rather than hitting something.
   fell: boolean;
   shake: number;
@@ -197,6 +201,11 @@ export type GameState = {
   // Camera lateral position eases after the player.
   camX: number;
   camLift: number;
+  // Recent runner positions (newest first) for cosmetic trails.
+  trailX: number[];
+  trailY: number[];
+  // Distance at which the trail was last sampled (every half meter).
+  trailAt: number;
   viewport: { width: number; height: number };
   characterId: string;
 };

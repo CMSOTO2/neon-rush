@@ -21,11 +21,12 @@ export function scoreMultiplier(state: GameState): number {
   return state.power[PowerUpKind.Multiplier] > 0 ? POWER.multiplier : 1;
 }
 
-export function activatePowerUp(state: GameState, kind: number): void {
+// fromPickup is false for the starting boost, which shouldn't count toward missions.
+export function activatePowerUp(state: GameState, kind: number, fromPickup = true): void {
   const duration = durationFor(kind, state.upgrades[kind]);
   state.power[kind] = duration;
   state.powerFull[kind] = duration;
-  state.stats.powerUps++;
+  if (fromPickup) state.stats.powerUps++;
   state.events |= GameEvent.PowerUp;
   const p = state.player;
 
