@@ -22,12 +22,13 @@ const BUILDING_SLOT = 11;
 
 export function drawSkyAndGround(canvas: SkCanvas, res: RenderResources, cam: Camera): void {
   canvas.save();
-  canvas.translate(-cam.x * 5 + cam.shakeX * 0.3, 0);
+  canvas.translate(-cam.x * 5 + cam.shakeX * 0.3, cam.offsetY);
   canvas.drawPicture(res.backdrop);
   canvas.restore();
 
   res.fill.setShader(res.groundShade);
-  res.rect.setXYWH(0, cam.horizonY, cam.width, cam.height - cam.horizonY);
+  const groundTop = cam.horizonY + cam.offsetY;
+  res.rect.setXYWH(0, groundTop, cam.width, cam.height - groundTop);
   res.fill.setAlphaf(1);
   canvas.drawRect(res.rect, res.fill);
   res.fill.setShader(null);

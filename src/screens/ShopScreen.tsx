@@ -98,6 +98,7 @@ export function ShopScreen() {
                   <NeonButton
                     label="UPGRADE"
                     variant={affordable ? 'primary' : 'secondary'}
+                    disabled={!affordable}
                     accessibilityHint={affordable ? undefined : 'Not enough coins yet'}
                     onPress={() => {
                       if (buy(p.kind)) playSfx('powerup');

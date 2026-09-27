@@ -66,8 +66,6 @@ export function MainMenu({ top, bottom, onPlay }: Props) {
         )}
       </View>
 
-      <View style={styles.spacer} pointerEvents="none" />
-
       <View style={styles.cards} pointerEvents="box-none">
         <View style={styles.card}>
           <View style={styles.cardHead}>
@@ -92,6 +90,8 @@ export function MainMenu({ top, bottom, onPlay }: Props) {
           <ProgressBar value={nextMission.progress / nextMission.target} />
         </View>
       </View>
+
+      <View style={styles.spacer} pointerEvents="none" />
 
       <Animated.View style={[styles.play, playStyle]}>
         <NeonButton label="PLAY" onPress={onPlay} accessibilityHint="Starts a run" />
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   spacer: { flex: 1 },
-  cards: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 14 },
+  cards: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginTop: 18 },
   card: {
     flex: 1,
     gap: 6,

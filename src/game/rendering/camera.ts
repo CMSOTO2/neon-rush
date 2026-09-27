@@ -21,6 +21,8 @@ export type Camera = {
   lift: number;
   shakeX: number;
   shakeY: number;
+  // Whole-scene vertical offset, used to frame the runner higher behind the main menu.
+  offsetY: number;
 };
 
 const CAMERA_BACK = 6;
@@ -54,6 +56,7 @@ export function createCamera(width: number, height: number): Camera {
     lift: 0,
     shakeX: 0,
     shakeY: 0,
+    offsetY: 0,
   };
 }
 
@@ -68,5 +71,7 @@ export function sx(cam: Camera, x: number, s: number): number {
 }
 
 export function sy(cam: Camera, y: number, s: number): number {
-  return cam.horizonY + (cam.camHeight + cam.lift - y * cam.heightBoost) * s + cam.shakeY;
+  return (
+    cam.horizonY + (cam.camHeight + cam.lift - y * cam.heightBoost) * s + cam.shakeY + cam.offsetY
+  );
 }

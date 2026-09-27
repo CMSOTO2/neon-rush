@@ -142,6 +142,7 @@ export function CharactersScreen() {
           <NeonButton
             label={profile.coins >= preview.unlock.cost ? 'UNLOCK' : 'NEED MORE COINS'}
             variant={profile.coins >= preview.unlock.cost ? 'primary' : 'secondary'}
+            disabled={profile.coins < preview.unlock.cost}
             onPress={() => {
               if (buy(preview.id)) {
                 playSfx('powerup');

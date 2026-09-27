@@ -89,4 +89,6 @@ export function stepGame(state: GameState, frameDt: number): void {
   // Lift the camera while flying so the runner stays framed.
   const liftTarget = state.player.flying ? state.player.y * 0.55 : 0;
   state.camLift += (liftTarget - state.camLift) * (1 - Math.exp(-3 * dt));
+  const menuTarget = state.phase === Phase.Ready ? 1 : 0;
+  state.menuLift += (menuTarget - state.menuLift) * (1 - Math.exp(-5 * dt));
 }

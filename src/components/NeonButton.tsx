@@ -19,6 +19,8 @@ type Props = {
   variant?: Variant;
   style?: ViewStyle;
   accessibilityHint?: string;
+  // Shown dimmed and ignores presses (e.g. not enough coins).
+  disabled?: boolean;
 };
 
 const COLORS: Record<Variant, { bg: string; border: string; text: string; glow: string }> = {
@@ -37,6 +39,7 @@ export function NeonButton({
   variant = 'primary',
   style,
   accessibilityHint,
+  disabled = false,
 }: Props) {
   const pressed = useSharedValue(0);
   const c = COLORS[variant];
@@ -51,6 +54,8 @@ export function NeonButton({
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPressIn={() => {
         pressed.value = withTiming(1, { duration: 70 });
         playSfx('click');
@@ -60,7 +65,7 @@ export function NeonButton({
         pressed.value = withSpring(0, { damping: 12, stiffness: 320 });
       }}
       onPress={onPress}
-      style={style}
+      style={[style, disabled && { opacity: 0.4 }]}
     >
       <Animated.View
         style={[
