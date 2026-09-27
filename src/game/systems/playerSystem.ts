@@ -2,6 +2,7 @@
 
 import { LANE_COUNT, LANE_WIDTH, laneX, PLAYER } from '../config';
 import { Action, GameEvent, Phase, type GameState } from '../types';
+import { fxRandom } from '../engine/random';
 import { burstDust, emitSparks } from './particleSystem';
 
 function startJump(state: GameState): void {
@@ -122,7 +123,7 @@ export function updatePlayer(state: GameState, dt: number): void {
     if (p.slideTime <= 0) {
       p.sliding = false;
       p.slideTime = 0;
-    } else if (Math.random() < dt * 30) {
+    } else if (fxRandom(state) < dt * 30) {
       emitSparks(state, p.x, state.distance);
     }
   }

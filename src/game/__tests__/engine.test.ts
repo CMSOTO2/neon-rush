@@ -1,6 +1,8 @@
+/// <reference types="bun" />
 import { describe, expect, test } from 'bun:test';
 
 import { LANE_COUNT } from '../config';
+import { autopilot } from './autopilot';
 import { createGameState, resetRun } from '../engine/state';
 import { stepGame } from '../engine/update';
 import { EMPTY, generateRow } from '../levels/patterns';
@@ -158,5 +160,23 @@ describe('long runs', () => {
     expect(s.distance).toBeGreaterThan(5000);
     expect(maxActive).toBeLessThan(s.obstacles.length);
     expect(s.rowCount).toBeGreaterThan(150);
+  });
+});
+
+describe('fairness', () => {
+  test('a simple bot survives 3000 m on every seed', () => {
+    const failures: string[] = [];
+    for (let seed = 1; seed <= 30; seed++) {
+      const s = createGameState(390, 844, 'nova', seed);
+      resetRun(s, Phase.Running, seed);
+      let frames = 0;
+      while (s.phase === Phase.Running && s.distance < 3000 && frames++ < 60 * 60 * 10) {
+        autopilot(s);
+        stepGame(s, DT);
+      }
+      if (s.phase !== Phase.Running)
+        failures.push(`seed ${seed} crashed at ${Math.floor(s.distance)} m`);
+    }
+    expect(failures).toEqual([]);
   });
 });

@@ -8,6 +8,14 @@ import { densityAt, DIFFICULTY, safeLaneActionAt } from './difficulty';
 // Row contents are written into this scratch buffer (-1 = empty lane) to avoid allocating.
 export const EMPTY = -1;
 
+// Worklet files turn functions into constants, so helpers must be defined before use.
+function pickBlocker(state: GameState, tramUnlocked: boolean, gateUnlocked: boolean): number {
+  const r = nextRandom(state);
+  if (tramUnlocked && r < 0.45) return ObstacleKind.Tram;
+  if (gateUnlocked && r < 0.72) return ObstacleKind.Gate;
+  return ObstacleKind.Barrier;
+}
+
 // Builds one obstacle row. Fairness rules:
 // - One "safe" lane always holds nothing, a barrier, or a gate: never a tram.
 // - The safe lane drifts at most one lane per row, so the escape route is always reachable.
@@ -52,11 +60,4 @@ export function generateRow(state: GameState, distance: number, out: number[]): 
     if (lane >= state.safeLane) lane++;
     out[lane] = pickBlocker(state, tramUnlocked, gateUnlocked);
   }
-}
-
-function pickBlocker(state: GameState, tramUnlocked: boolean, gateUnlocked: boolean): number {
-  const r = nextRandom(state);
-  if (tramUnlocked && r < 0.45) return ObstacleKind.Tram;
-  if (gateUnlocked && r < 0.72) return ObstacleKind.Gate;
-  return ObstacleKind.Barrier;
 }

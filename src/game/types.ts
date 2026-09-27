@@ -39,6 +39,7 @@ export const GameEvent = {
   Crash: 16,
   GameOver: 32,
   Land: 64,
+  Start: 128,
 } as const;
 
 export type PlayerState = {
@@ -113,7 +114,10 @@ export type GameState = {
   rowCount: number;
   // Scratch buffer for row generation (one entry per lane) so spawning never allocates.
   rowBuffer: number[];
+  // Gameplay RNG (level generation) and a separate one for cosmetic effects, so particles
+  // never change the obstacle layout of a seeded run.
   rng: number;
+  fxRng: number;
   stats: RunStats;
   crashTime: number;
   shake: number;

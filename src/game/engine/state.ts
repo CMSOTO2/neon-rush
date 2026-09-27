@@ -68,6 +68,7 @@ export function createGameState(
     rowCount: 0,
     rowBuffer: [-1, -1, -1],
     rng: seed | 0,
+    fxRng: (seed ^ 0x5bd1e995) | 0,
     stats: { distance: 0, score: 0, jumps: 0, slides: 0, obstaclesPassed: 0, stumbles: 0 },
     crashTime: 0,
     shake: 0,
@@ -110,6 +111,7 @@ export function resetRun(state: GameState, phase: Phase, seed: number): void {
   state.safeLane = START_LANE;
   state.rowCount = 0;
   state.rng = seed | 0;
+  state.fxRng = (seed ^ 0x5bd1e995) | 0;
   state.crashTime = 0;
   state.shake = 0;
   state.events = 0;
