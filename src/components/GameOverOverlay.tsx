@@ -34,8 +34,8 @@ export function GameOverOverlay({ result, isBest, bestScore, onRestart, onMenu }
 
       <View style={styles.stats}>
         <Stat label="Distance" value={`${Math.floor(result.distance)} m`} />
+        <Stat label="Coins" value={String(result.coins)} color={UI.gold} />
         <Stat label="Dodged" value={String(result.obstaclesPassed)} />
-        <Stat label="Jumps" value={String(result.jumps)} />
       </View>
 
       <NeonButton label="RUN AGAIN" onPress={onRestart} />
@@ -44,10 +44,10 @@ export function GameOverOverlay({ result, isBest, bestScore, onRestart, onMenu }
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <View style={styles.stat}>
-      <Text style={styles.statValue}>{value}</Text>
+      <Text style={[styles.statValue, color ? { color } : null]}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );

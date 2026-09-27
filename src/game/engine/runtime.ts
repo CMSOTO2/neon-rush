@@ -22,7 +22,8 @@ export function createRuntime(
 ): GameRuntime {
   const order: number[] = [];
   const keys: number[] = [];
-  for (let i = 0; i <= POOL_SIZES.obstacles; i++) {
+  const slots = POOL_SIZES.obstacles + POOL_SIZES.coins + POOL_SIZES.pickups + 1;
+  for (let i = 0; i < slots; i++) {
     order.push(0);
     keys.push(0);
   }

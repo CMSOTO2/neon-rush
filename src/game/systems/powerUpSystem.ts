@@ -36,7 +36,13 @@ export function activatePowerUp(state: GameState, kind: number): void {
     p.grounded = false;
     p.vy = 0;
     // Sky coins start once the runner has climbed.
-    placeSkyTrail(state, state.distance + 14, duration * state.speed - 20, POWER.jetpackAltitude);
+    placeSkyTrail(
+      state,
+      state.distance + 14,
+      duration * state.speed - 20,
+      POWER.jetpackAltitude,
+      p.targetLane,
+    );
   } else if (kind === PowerUpKind.Boost) {
     state.events |= GameEvent.Boost;
   }

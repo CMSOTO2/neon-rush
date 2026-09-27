@@ -150,7 +150,7 @@ export function drawBox(
   } else if (cam.x > x1) {
     fillQuad(canvas, res, rN, bN, rF, bF, rF, tF, rN, tN, side, alpha);
   }
-  if (cam.camHeight > y1 * cam.heightBoost) {
+  if (cam.camHeight + cam.lift > y1 * cam.heightBoost) {
     fillQuad(canvas, res, lN, tN, rN, tN, rF, tF, lF, tF, top, alpha);
   }
   fillRect(canvas, res, lN, tN, rN, bN, front, alpha);

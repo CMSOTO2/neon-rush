@@ -3,7 +3,7 @@
 import type { SkCanvas, SkColor } from '@shopify/react-native-skia';
 
 import { PLAYER } from '../config';
-import { Phase, type GameState } from '../types';
+import { Phase, PowerUpKind, type GameState } from '../types';
 import { scaleAt, sx, sy, type Camera } from './camera';
 import type { RenderResources } from './resources';
 
@@ -67,6 +67,9 @@ function tri(
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
+const crashedPhase = (state: GameState) =>
+  state.phase === Phase.Crashing || state.phase === Phase.Over;
+
 export function drawRunner(
   canvas: SkCanvas,
   res: RenderResources,
@@ -83,10 +86,19 @@ export function drawRunner(
   const shX = sx(cam, p.x, s);
   const shY = sy(cam, 0, s);
   const lift = clamp(1 - p.y * 0.22, 0.45, 1);
+  const fell = state.fell && crashedPhase(state);
   canvas.save();
   canvas.translate(shX, shY);
   canvas.scale(1, 0.3);
-  dot(canvas, res, 0, 0, 0.62 * s * lift, res.ui.shadow, 0.45 * lift);
+  if (!fell) dot(canvas, res, 0, 0, 0.62 * s * lift, res.ui.shadow, 0.45 * lift);
+  // Magnet field: a pulsing ring around the runner's feet.
+  if (state.power[PowerUpKind.Magnet] > 0) {
+    const pulse = (state.time * 1.6) % 1;
+    res.stroke.setColor(res.power[PowerUpKind.Magnet]);
+    res.stroke.setStrokeWidth(Math.max(2, 0.08 * s));
+    res.stroke.setAlphaf(0.8 * (1 - pulse));
+    canvas.drawCircle(0, 0, (0.7 + pulse * 1.6) * s, res.stroke);
+  }
   canvas.restore();
 
   // Pose defaults: standing.
@@ -163,6 +175,28 @@ export function drawRunner(
     rEy = 0.6;
     sqX = 1.06;
     lean = -6;
+  } else if (p.flying) {
+    // Jetpack: legs trailing together, arms out like wings, gentle bob.
+    const bob = Math.sin(t * 5) * 0.04;
+    hipY += bob;
+    chestY += bob;
+    headY += bob;
+    lFx = -0.1;
+    rFx = 0.1;
+    lFy = 0.12;
+    rFy = 0.16;
+    lKx = -0.13;
+    rKx = 0.13;
+    lKy = 0.45;
+    rKy = 0.47;
+    lHx = -0.62;
+    rHx = 0.62;
+    lHy = 1.12 + bob;
+    rHy = 1.12 + bob;
+    lEx = -0.45;
+    rEx = 0.45;
+    lEy = 1.22 + bob;
+    rEy = 1.22 + bob;
   } else if (!p.grounded) {
     const r = clamp(p.vy / PLAYER.jumpVelocity, -1, 1);
     const tuck = clamp(0.45 + r * 0.7, 0, 1);
@@ -215,8 +249,13 @@ export function drawRunner(
     if (p.stumbleTime > 0) {
       lean += Math.sin(t * 45) * 10;
       alpha = Math.floor(t * 18) % 2 === 0 ? 0.45 : 1;
+    } else if (state.invuln > 0) {
+      // Grace period after a shield break or power-up: blink so it's clearly temporary.
+      alpha = Math.floor(t * 14) % 2 === 0 ? 0.5 : 1;
     }
   }
+  // Sink out of sight when falling into a gap.
+  if (fell) alpha *= clamp(1 + p.y / 1.5, 0, 1);
   if (p.landSquash > 0) {
     const f = p.landSquash / PLAYER.landSquashTime;
     sqY *= 1 - 0.16 * f;
@@ -230,6 +269,12 @@ export function drawRunner(
   // Pivot around the hips (or feet when falling over).
   const pivot = crashed ? 0 : hipY;
   canvas.rotate(-lean, 0, pivot);
+
+  if (state.power[PowerUpKind.Boost] > 0) {
+    const flick = 0.85 + 0.15 * Math.sin(t * 40);
+    dot(canvas, res, 0, 0.95, 0.95 * flick, res.power[PowerUpKind.Boost], 0.22);
+    dot(canvas, res, 0, 0.95, 0.7 * flick, res.power[PowerUpKind.Boost], 0.25);
+  }
 
   // Legs and shoes.
   limb(canvas, res, -0.12, hipY, lKx, lKy, 0.21, c.pants, alpha);
@@ -322,14 +367,43 @@ export function drawRunner(
   dot(canvas, res, headX - hr * 0.98, headY - 0.02, 0.07, c.visor, alpha);
   dot(canvas, res, headX + hr * 0.98, headY - 0.02, 0.07, c.visor, alpha);
 
+  if (p.collectFlash > 0) {
+    dot(canvas, res, 0, chestY - 0.2, 0.55 * (p.collectFlash / 0.15), res.ui.gold, 0.35);
+  }
+
   // Backpack with a status light.
   limb(canvas, res, 0, hipY + 0.24, 0, chestY - 0.2, 0.36, c.backpack, alpha);
   limb(canvas, res, 0, hipY + 0.2, 0, chestY - 0.16, 0.05, c.backpackLight, alpha * 0.9);
   const blink = Math.sin(t * 6) > 0 ? 1 : 0.3;
   dot(canvas, res, 0.1, chestY - 0.12, 0.04, c.backpackLight, alpha * blink);
 
+  if (p.flying) {
+    const jet = res.power[PowerUpKind.Jetpack];
+    limb(canvas, res, -0.14, hipY + 0.1, -0.14, chestY - 0.05, 0.2, jet, alpha);
+    limb(canvas, res, 0.14, hipY + 0.1, 0.14, chestY - 0.05, 0.2, jet, alpha);
+    limb(canvas, res, -0.14, chestY - 0.08, -0.14, chestY - 0.02, 0.2, res.ui.white, alpha);
+    limb(canvas, res, 0.14, chestY - 0.08, 0.14, chestY - 0.02, 0.2, res.ui.white, alpha);
+    // Flames.
+    const f = 0.25 + Math.sin(t * 35) * 0.06;
+    tri(canvas, res, -0.22, hipY + 0.02, -0.06, hipY + 0.02, -0.14, hipY - f, res.ui.gold, alpha);
+    tri(canvas, res, 0.06, hipY + 0.02, 0.22, hipY + 0.02, 0.14, hipY - f, res.ui.gold, alpha);
+  }
+
+  // Shield bubble.
+  if (state.power[PowerUpKind.Shield] > 0) {
+    const sc = res.power[PowerUpKind.Shield];
+    const pulse = 1 + 0.03 * Math.sin(t * 6);
+    const top = p.sliding ? 0.6 : 0.95;
+    dot(canvas, res, 0, top, 1.05 * pulse, sc, 0.16);
+    res.stroke.setColor(sc);
+    res.stroke.setAlphaf(0.75);
+    res.stroke.setStrokeWidth(0.06);
+    canvas.drawCircle(0, top, 1.05 * pulse, res.stroke);
+    limb(canvas, res, -0.55, top + 0.55, -0.3, top + 0.8, 0.06, res.ui.white, 0.6);
+  }
+
   // Dizzy stars after a crash.
-  if (crashed) {
+  if (crashed && !fell) {
     for (let i = 0; i < 3; i++) {
       const a = t * 5 + (i * Math.PI * 2) / 3;
       dot(

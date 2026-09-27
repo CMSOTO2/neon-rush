@@ -17,6 +17,8 @@ export type Camera = {
   // Per-frame values.
   x: number;
   z: number;
+  // Extra camera height (in boosted units) while the runner is flying.
+  lift: number;
   shakeX: number;
   shakeY: number;
 };
@@ -49,6 +51,7 @@ export function createCamera(width: number, height: number): Camera {
     near: 2,
     x: 0,
     z: 0,
+    lift: 0,
     shakeX: 0,
     shakeY: 0,
   };
@@ -65,5 +68,5 @@ export function sx(cam: Camera, x: number, s: number): number {
 }
 
 export function sy(cam: Camera, y: number, s: number): number {
-  return cam.horizonY + (cam.camHeight - y * cam.heightBoost) * s + cam.shakeY;
+  return cam.horizonY + (cam.camHeight + cam.lift - y * cam.heightBoost) * s + cam.shakeY;
 }

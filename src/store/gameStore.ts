@@ -9,10 +9,12 @@ export type UiPhase = 'ready' | 'running' | 'paused' | 'over';
 export type RunResult = {
   score: number;
   distance: number;
+  coins: number;
   jumps: number;
   slides: number;
   obstaclesPassed: number;
   stumbles: number;
+  powerUps: number;
 };
 
 type GameStore = {

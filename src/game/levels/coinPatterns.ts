@@ -84,17 +84,29 @@ export function placeRowCoins(state: GameState, rowZ: number, row: number[]): vo
   }
 }
 
-// A snaking trail at jetpack altitude for the length of the flight.
+// A sky trail at jetpack altitude for the length of the flight. It starts in the runner's
+// lane, holds each lane for a stretch, then glides to a neighbouring lane, so following
+// it is a steady rhythm of lane changes.
 export function placeSkyTrail(
   state: GameState,
   fromZ: number,
   length: number,
   altitude: number,
+  startLane: number,
 ): void {
-  const phase = nextRandom(state) * Math.PI * 2;
-  for (let dz = 0; dz < length; dz += COINS.spacing * 1.2) {
-    const lanePos = 1 + Math.sin(phase + dz * 0.045) * 1.05;
-    const clamped = lanePos < 0 ? 0 : lanePos > 2 ? 2 : lanePos;
-    placeCoin(state, laneX(0) + clamped * (laneX(1) - laneX(0)), altitude + 0.5, fromZ + dz);
+  const spacing = COINS.spacing * 1.2;
+  const y = altitude + 0.5;
+  let lane = startLane;
+  let z = fromZ;
+  const end = fromZ + length;
+  while (z < end) {
+    const x = laneX(lane);
+    for (let i = 0; i < 6 && z < end; i++, z += spacing) placeCoin(state, x, y, z);
+    let next = lane + (nextRandom(state) < 0.5 ? -1 : 1);
+    if (next < 0 || next > 2) next = lane + (lane === 0 ? 1 : -1);
+    const nx = laneX(next);
+    for (let i = 1; i <= 3 && z < end; i++, z += spacing)
+      placeCoin(state, x + ((nx - x) * i) / 4, y, z);
+    lane = next;
   }
 }

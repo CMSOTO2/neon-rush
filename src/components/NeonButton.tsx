@@ -7,6 +7,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { playSfx } from '../audio/sfx';
 import { FONTS } from '../constants/fonts';
 import { UI } from '../constants/palette';
 
@@ -52,6 +53,7 @@ export function NeonButton({
       accessibilityHint={accessibilityHint}
       onPressIn={() => {
         pressed.value = withTiming(1, { duration: 70 });
+        playSfx('click');
         if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
       }}
       onPressOut={() => {

@@ -5,6 +5,8 @@ import { AppState, Platform } from 'react-native';
 import { useFrameCallback, useSharedValue, type FrameInfo } from 'react-native-reanimated';
 import { scheduleOnRN, scheduleOnUI } from 'react-native-worklets';
 
+import { initSfx, playSfx, type SfxName } from '../audio/sfx';
+import { DEV } from '../constants/dev';
 import { useGameStore } from '../store/gameStore';
 import { handleInput, returnToReady, setPaused, startRun, takeEvents } from './engine/controls';
 import { createRuntime, type GameRuntime } from './engine/runtime';
@@ -14,7 +16,8 @@ import { useSwipeGesture } from './input/useSwipeGesture';
 import { createCamera } from './rendering/camera';
 import { renderFrame } from './rendering/renderFrame';
 import { createRenderResources } from './rendering/resources';
-import { GameEvent, Phase, type Action } from './types';
+import { activatePowerUp } from './systems/powerUpSystem';
+import { GameEvent, Phase, type Action, type GameState, type RunStats } from './types';
 
 const emptyPicture = (() => {
   const rec = Skia.PictureRecorder();
@@ -27,22 +30,49 @@ const newSeed = (): number => {
   return (Math.random() * 2147483647) | 0;
 };
 
-// Web-only dev aid: ?timescale=0.25 slows the game down to inspect visuals frame by frame.
-const DEV_TIME_SCALE = (() => {
-  if (Platform.OS !== 'web' || typeof window === 'undefined') return 1;
-  const v = Number(new URLSearchParams(window.location.search).get('timescale'));
-  return v > 0 && v <= 4 ? v : 1;
-})();
+const DEV_POWER = DEV.power;
+const DEV_INVINCIBLE = DEV.invincible;
+const startWithDevPower = (state: GameState): void => {
+  'worklet';
+  if (DEV_POWER >= 0 && DEV_POWER < 5 && state.phase === Phase.Running) {
+    activatePowerUp(state, DEV_POWER);
+  }
+};
 
+// Haptics for the moments that matter; everything else stays silent on the hand.
 const haptic = (events: number) => {
   if (Platform.OS === 'web') return;
   if (events & GameEvent.Crash) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-  } else if (events & GameEvent.Stumble) {
+  } else if (events & GameEvent.ShieldBreak) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+  } else if (events & (GameEvent.Stumble | GameEvent.Smash)) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+  } else if (events & GameEvent.PowerUp) {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   } else if (events & GameEvent.Land) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   }
+};
+
+// Event flag -> sound. Order matters only in that each flag plays its own sound once.
+const SOUNDS: [number, SfxName][] = [
+  [GameEvent.Coin, 'coin'],
+  [GameEvent.Jump, 'jump'],
+  [GameEvent.Slide, 'slide'],
+  [GameEvent.Lane, 'lane'],
+  [GameEvent.Land, 'land'],
+  [GameEvent.Stumble, 'land'],
+  [GameEvent.PowerUp, 'powerup'],
+  [GameEvent.Boost, 'boost'],
+  [GameEvent.ShieldBreak, 'shield'],
+  [GameEvent.Smash, 'shield'],
+  [GameEvent.Crash, 'crash'],
+  [GameEvent.GameOver, 'gameover'],
+];
+
+const playEventSounds = (events: number) => {
+  for (const [flag, name] of SOUNDS) if (events & flag) playSfx(name);
 };
 
 type Options = {
@@ -88,49 +118,59 @@ export function useGameLoop({
     });
   }, [runtime, width, height, characterId]);
 
-  const onEvents = useCallback(
-    (
-      events: number,
-      score: number,
-      distance: number,
-      jumps: number,
-      slides: number,
-      passed: number,
-      stumbles: number,
-    ) => {
-      haptic(events);
-      const store = useGameStore.getState();
-      if (events & GameEvent.Start) store.setPhase('running');
-      if (events & GameEvent.GameOver) {
-        store.finishRun({ score, distance, jumps, slides, obstaclesPassed: passed, stumbles });
-      }
-    },
-    [],
-  );
+  useEffect(() => {
+    initSfx();
+  }, []);
+
+  // Dev builds can start a run automatically (EXPO_PUBLIC_AUTOSTART=1) for testing
+  // without touch input, e.g. on a simulator.
+  useEffect(() => {
+    if (!DEV.autostart) return;
+    const t = setTimeout(() => {
+      scheduleOnUI(() => {
+        'worklet';
+        const rt = runtime.get();
+        if (!rt) return;
+        startRun(rt.state, newSeed());
+        startWithDevPower(rt.state);
+      });
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [runtime]);
+
+  const onEvents = useCallback((events: number, stats: RunStats | null) => {
+    haptic(events);
+    playEventSounds(events);
+    const store = useGameStore.getState();
+    if (events & GameEvent.Start) store.setPhase('running');
+    if (events & GameEvent.GameOver && stats) {
+      store.finishRun({
+        score: stats.score,
+        distance: stats.distance,
+        coins: stats.coins,
+        jumps: stats.jumps,
+        slides: stats.slides,
+        obstaclesPassed: stats.obstaclesPassed,
+        stumbles: stats.stumbles,
+        powerUps: stats.powerUps,
+      });
+    }
+  }, []);
 
   const onFrame = useCallback(
     (info: FrameInfo) => {
       'worklet';
       const rt = runtime.get();
       if (!rt) return;
-      const dt = ((info.timeSincePreviousFrame ?? 16) / 1000) * DEV_TIME_SCALE;
+      const dt = ((info.timeSincePreviousFrame ?? 16) / 1000) * DEV.timeScale;
       const state = rt.state;
+      if (DEV_INVINCIBLE && state.phase === Phase.Running)
+        state.invuln = Math.max(state.invuln, 0.2);
       stepGame(state, dt);
 
       const ev = takeEvents(state);
-      if (ev !== 0) {
-        const st = state.stats;
-        scheduleOnRN(
-          onEvents,
-          ev,
-          st.score,
-          st.distance,
-          st.jumps,
-          st.slides,
-          st.obstaclesPassed,
-          st.stumbles,
-        );
-      }
+      // Stats are only copied across threads when the run ends.
+      if (ev !== 0) scheduleOnRN(onEvents, ev, ev & GameEvent.GameOver ? state.stats : null);
 
       const canvas = resources.recorder.beginRecording(resources.bounds);
       renderFrame(canvas, state, rt.render, resources);
@@ -145,7 +185,10 @@ export function useGameLoop({
     (action: Action) => {
       'worklet';
       const rt = runtime.get();
-      if (rt) handleInput(rt.state, action, newSeed());
+      if (!rt) return;
+      const wasReady = rt.state.phase === Phase.Ready;
+      handleInput(rt.state, action, newSeed());
+      if (wasReady) startWithDevPower(rt.state);
     },
     [runtime],
   );
@@ -153,7 +196,10 @@ export function useGameLoop({
   const tapToStart = useCallback(() => {
     'worklet';
     const rt = runtime.get();
-    if (rt && rt.state.phase === Phase.Ready) startRun(rt.state, newSeed());
+    if (rt && rt.state.phase === Phase.Ready) {
+      startRun(rt.state, newSeed());
+      startWithDevPower(rt.state);
+    }
   }, [runtime]);
 
   const gesture = useSwipeGesture(width, dispatch, tapToStart);

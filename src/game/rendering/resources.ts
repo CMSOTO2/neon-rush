@@ -16,6 +16,7 @@ import {
 
 import { NEON_CITY, OBSTACLE_COLORS, UI, type EnvironmentPalette } from '../../constants/palette';
 import { getCharacter, type CharacterColors } from '../characters/characters';
+import { POWERUPS } from '../powerups/powerups';
 
 // Everything the renderer needs, created once on the JS thread per viewport and then
 // captured by the UI-thread frame callback. Paints, paths and rects are mutated in place
@@ -69,6 +70,10 @@ export type RenderResources = {
     tram: Colors<typeof OBSTACLE_COLORS.tram>;
   };
   character: Colors<CharacterColors> & { ears: number };
+  coin: { face: SkColor; rim: SkColor; inner: SkColor; shine: SkColor };
+  // Power-up colours by PowerUpKind.
+  power: SkColor[];
+  gap: { pit: SkColor; rim: SkColor; glow: SkColor };
   ui: { text: SkColor; shadow: SkColor; accent: SkColor; gold: SkColor; white: SkColor };
 };
 
@@ -250,6 +255,14 @@ export function createRenderResources(
       tram: toColors(OBSTACLE_COLORS.tram),
     },
     character: { ...toColors(character.colors), ears: character.ears },
+    coin: {
+      face: Skia.Color('#ffc928'),
+      rim: Skia.Color('#d98a0b'),
+      inner: Skia.Color('#ffe680'),
+      shine: Skia.Color('#fffbe6'),
+    },
+    power: POWERUPS.map((p) => Skia.Color(p.color)),
+    gap: { pit: Skia.Color('#05010f'), rim: Skia.Color('#ff4f6d'), glow: Skia.Color('#7a1bff') },
     ui: {
       text: Skia.Color(UI.text),
       shadow: Skia.Color(UI.shadow),

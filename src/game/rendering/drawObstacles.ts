@@ -3,7 +3,7 @@
 import type { SkCanvas } from '@shopify/react-native-skia';
 
 import { laneX, OBSTACLES, WORLD } from '../config';
-import { ObstacleKind, type Obstacle } from '../types';
+import { ObstacleKind, type GameState, type Obstacle } from '../types';
 import { scaleAt, sx, sy, type Camera } from './camera';
 import { distanceFade, drawBox, fillQuad, fillRect, groundQuad, type FaceRect } from './primitives';
 import type { RenderResources } from './resources';
@@ -181,6 +181,22 @@ function drawTram(
   const t = OBSTACLES.tram;
   const hover = 0.35 + Math.sin(time * 4 + o.seed * 9) * 0.05;
 
+  // Oncoming trams throw headlight beams down the road ahead of them.
+  if (o.vz !== 0) {
+    const flicker = 0.75 + 0.25 * Math.sin(time * 20 + o.seed * 7);
+    groundQuad(
+      canvas,
+      res,
+      cam,
+      x - 0.9,
+      x + 0.9,
+      o.z0 - 16,
+      o.z0,
+      c.light,
+      0.16 * alpha * flicker,
+    );
+    groundQuad(canvas, res, cam, x - 0.5, x + 0.5, o.z0 - 9, o.z0, c.light, 0.22 * alpha * flicker);
+  }
   // Hover glow on the road beneath.
   groundQuad(
     canvas,
@@ -301,5 +317,84 @@ export function drawObstacle(
   if (alpha <= 0) return;
   if (o.kind === ObstacleKind.Barrier) drawBarrier(canvas, res, cam, face, o, alpha, time);
   else if (o.kind === ObstacleKind.Gate) drawGate(canvas, res, cam, face, o, alpha, time);
-  else drawTram(canvas, res, cam, face, o, alpha, time);
+  else if (o.kind === ObstacleKind.Tram) drawTram(canvas, res, cam, face, o, alpha, time);
+}
+
+// Gaps are holes in the road, drawn with the road surface before anything stands on it:
+// a dark pit, a glimpse of the glowing grid far below, and hazard-red rims.
+export function drawGaps(
+  canvas: SkCanvas,
+  res: RenderResources,
+  cam: Camera,
+  state: GameState,
+): void {
+  const g = OBSTACLES.gap;
+  const pool = state.obstacles;
+  const near = cam.z + cam.near;
+  for (let i = 0; i < pool.length; i++) {
+    const o = pool[i];
+    if (!o.active || o.kind !== ObstacleKind.Gap || o.z1 <= near) continue;
+    const alpha = distanceFade(cam, o.z0, WORLD.drawDistance);
+    if (alpha <= 0) continue;
+    const x = laneX(o.lane);
+    groundQuad(canvas, res, cam, x - g.halfWidth, x + g.halfWidth, o.z0, o.z1, res.gap.pit, alpha);
+    // Deep glow inside the pit, pulsing slowly.
+    const pulse = 0.35 + 0.15 * Math.sin(state.time * 3 + o.seed * 5);
+    groundQuad(
+      canvas,
+      res,
+      cam,
+      x - g.halfWidth * 0.7,
+      x + g.halfWidth * 0.7,
+      o.z0 + 0.5,
+      o.z1 - 0.3,
+      res.gap.glow,
+      pulse * alpha,
+    );
+    // Near and far rims, plus side rails.
+    groundQuad(
+      canvas,
+      res,
+      cam,
+      x - g.halfWidth,
+      x + g.halfWidth,
+      o.z0 - 0.12,
+      o.z0 + 0.12,
+      res.gap.rim,
+      alpha,
+    );
+    groundQuad(
+      canvas,
+      res,
+      cam,
+      x - g.halfWidth,
+      x + g.halfWidth,
+      o.z1 - 0.12,
+      o.z1 + 0.12,
+      res.gap.rim,
+      alpha,
+    );
+    groundQuad(
+      canvas,
+      res,
+      cam,
+      x - g.halfWidth - 0.1,
+      x - g.halfWidth + 0.06,
+      o.z0,
+      o.z1,
+      res.gap.rim,
+      0.8 * alpha,
+    );
+    groundQuad(
+      canvas,
+      res,
+      cam,
+      x + g.halfWidth - 0.06,
+      x + g.halfWidth + 0.1,
+      o.z0,
+      o.z1,
+      res.gap.rim,
+      0.8 * alpha,
+    );
+  }
 }
