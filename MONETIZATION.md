@@ -25,11 +25,11 @@ The audience decision drives the rules we have to follow:
 
 Ship the game free, with no ads or purchases. Measure the metrics below for a few weeks. If Day-1 and Day-7 retention are weak, fix the game first; monetization won't rescue it.
 
-Design hooks that go in now at no cost:
+Design hooks that go in now at no cost (status as of 2026-09-27):
 
-- **Revive with coins.** A crash offers "Continue?" for an escalating coin price, once or twice per run. It works offline and without ads, and it's the mechanic rewarded ads plug into later.
-- **Cosmetic catalog** (characters, outfits, hoverboards, trails) with an `unlock` field that can later say `coins`, `achievement` or `purchase`.
-- **Local, anonymous metrics** (runs, session length, revives used) so we have numbers before adding any analytics SDK.
+- **Revive with coins.** _Built._ A crash offers "Continue?" for 150 coins, then 300, at most twice per run. It works offline and without ads, and it's the mechanic rewarded ads plug into later.
+- **Cosmetic catalog.** _Built_ (`src/progression/cosmetics.ts`): characters, outfits, accessories, trails and hoverboards, each with an `unlock` rule (`coins`, `level` or `achievement`). A `purchase` unlock type gets added when Phase 2 starts.
+- **Local, anonymous metrics.** _Not built yet_ (ROADMAP P1): runs, session length, revives used, so we have numbers before adding any analytics SDK.
 
 ### Phase 1: rewarded ads (first revenue)
 

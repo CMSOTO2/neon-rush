@@ -1,5 +1,7 @@
 # Project: Neon Rush — Mobile Endless Runner
 
+> **Status:** this is the original brief, kept as written. All four milestones are built; see [README.md](README.md) for what exists and [ROADMAP.md](ROADMAP.md) for what comes next. Additions beyond the brief: a 20-level campaign alongside endless mode, and the Sunset Beach world.
+
 ## Role
 
 You are a senior mobile game developer specializing in React Native, Expo, TypeScript, game architecture, animation, and mobile performance.

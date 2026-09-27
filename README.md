@@ -1,6 +1,6 @@
 # Neon Rush
 
-A 2.5D endless runner for iOS and Android, built with Expo (SDK 57), React Native Skia, Reanimated and Gesture Handler. The full brief is in [SPEC.md](SPEC.md); the post-launch money plan is in [MONETIZATION.md](MONETIZATION.md).
+A 2.5D endless runner for iOS and Android, built with Expo (SDK 57), React Native Skia, Reanimated and Gesture Handler. The original brief is in [SPEC.md](SPEC.md), what's next is in [ROADMAP.md](ROADMAP.md), and the post-launch money plan is in [MONETIZATION.md](MONETIZATION.md).
 
 ## Run it
 
@@ -99,14 +99,6 @@ Gotchas:
 - Level generation and cosmetic effects use separate RNG streams, so a seed always produces the same obstacles.
 - Chrome throttles animation in hidden tabs, so a web test in a background window shows a blank canvas.
 
-## Status and what's left
+## Status and what's next
 
-Milestones 1 to 4 are in place: the playable core, coins, power-ups, the new obstacles, full progression and saving, all the screens, two worlds, levels plus endless, audio and accessibility.
-
-Not yet done:
-
-- Swipe controls have not been tested on a physical device or with touch on the simulator. Try them in Expo Go first.
-- Android hasn't been run (no emulator was available). Everything used is cross-platform, but it needs a pass.
-- Real-device performance on a mid-range phone should be measured with `EXPO_PUBLIC_PERF=1`.
-- More worlds (amusement park, snow, space) and more characters are data additions away.
-- Portrait only. Upside-down portrait is enabled in `app.json` for iOS builds (Expo Go ignores it).
+Milestones 1 to 4 from the brief are done, plus the level campaign. What to do next, in priority order (real-device testing, Android, the back button, app icon, a first-run tutorial, then content), is in [ROADMAP.md](ROADMAP.md).

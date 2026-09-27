@@ -39,3 +39,27 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## This project: Neon Rush
+
+A 2.5D endless runner. Start with README.md (what exists, architecture), ROADMAP.md (what to do next) and MONETIZATION.md (post-launch only; v1 has no ads or purchases).
+
+### Conventions
+
+- Commit as you go, and run `npm run format` (Prettier) before every commit.
+- Don't add new unit tests (the owner's preference). Existing bun tests can be run: `npm test`.
+- Before calling work done: `npm run typecheck`, `npx expo lint`, `npm test`.
+- Game rules and data live in plain TypeScript (`src/progression/`, `src/game/levels/`, `src/game/powerups/`); keep React out of them.
+
+### Engine gotchas
+
+- Everything under `src/game/engine`, `systems`, `levels`, and `rendering` runs on the UI thread as worklets (`'worklet';` at the top of the file). In those files functions become constants, so define helpers **before** the functions that call them, and don't allocate per frame (reuse pools, the path builder and rects).
+- The camera near plane is 2 m on purpose (CanvasKit drops geometry projected to huge coordinates).
+- Level generation uses `state.rng`; cosmetic effects use `state.fxRng`. Don't mix them, or seeded runs and levels stop being reproducible.
+- Adding content: power-ups in `game/powerups/powerups.ts`, worlds in `constants/palette.ts` (+ a scenery drawer), cosmetics in `progression/cosmetics.ts`, levels in `progression/campaign.ts`.
+
+### Testing without touch input
+
+- iOS simulator: `EXPO_PUBLIC_AUTOSTART=1 npx expo start --ios` (see the dev switch table in README.md), screenshots with `xcrun simctl io booted screenshot`, screens via deep links like `xcrun simctl openurl booted exp://127.0.0.1:<port>/--/shop`.
+- Web: `npx expo start --web`; the app renders in a phone-shaped frame with arrow-key controls. A hidden or background tab gets no animation frames.
+- Regenerate audio with `npm run sfx` and `npm run music`.
