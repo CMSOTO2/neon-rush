@@ -42,6 +42,7 @@ const newSeed = (): number => {
 };
 
 const DEV_POWER = DEV.power;
+const DEV_PERF = DEV.perf;
 const DEV_INVINCIBLE = DEV.invincible;
 const startWithDevPower = (state: GameState): void => {
   'worklet';
@@ -232,7 +233,9 @@ export function useGameLoop({
       if (DEV_INVINCIBLE && state.phase === Phase.Running) {
         state.invuln = Math.max(state.invuln, 0.2);
       }
+      const t0 = DEV_PERF ? performance.now() : 0;
       stepGame(state, dt);
+      const t1 = DEV_PERF ? performance.now() : 0;
 
       const ev = takeEvents(state);
       // Stats are only copied across threads when the run ends.
@@ -243,6 +246,24 @@ export function useGameLoop({
       const canvas = resources.recorder.beginRecording(resources.bounds);
       renderFrame(canvas, state, rt.render, resources);
       picture.set(resources.recorder.finishRecordingAsPicture());
+
+      if (DEV_PERF) {
+        // Frame budget report: simulation vs. recording the Skia picture, in ms.
+        const p = rt.perf;
+        p.step += t1 - t0;
+        p.draw += performance.now() - t1;
+        p.frames++;
+        p.worst = Math.max(p.worst, info.timeSincePreviousFrame ?? 0);
+        if (p.frames >= 120) {
+          console.log(
+            `[perf] step ${(p.step / p.frames).toFixed(2)}ms  draw ${(p.draw / p.frames).toFixed(2)}ms  worst frame ${p.worst.toFixed(1)}ms  distance ${Math.floor(state.distance)}m`,
+          );
+          p.step = 0;
+          p.draw = 0;
+          p.frames = 0;
+          p.worst = 0;
+        }
+      }
     },
     [runtime, picture, resources, onEvents, reduceMotionSV],
   );
