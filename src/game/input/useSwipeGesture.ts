@@ -27,21 +27,21 @@ export function useSwipeGesture(
     const pan = Gesture.Pan()
       .minDistance(4)
       .onBegin(() => {
-        fired.value = false;
+        fired.set(false);
       })
       .onUpdate((e) => {
-        if (fired.value) return;
+        if (fired.get()) return;
         if (Math.max(Math.abs(e.translationX), Math.abs(e.translationY)) < threshold) return;
-        fired.value = true;
+        fired.set(true);
         dispatch(classify(e.translationX, e.translationY));
       })
       .onEnd((e) => {
         // A very short but fast flick that never crossed the threshold still counts.
-        if (fired.value) return;
+        if (fired.get()) return;
         const speed = Math.hypot(e.velocityX, e.velocityY);
         const dist = Math.hypot(e.translationX, e.translationY);
         if (speed > 450 && dist > 8) {
-          fired.value = true;
+          fired.set(true);
           dispatch(classify(e.translationX, e.translationY));
         }
       });

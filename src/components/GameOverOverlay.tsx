@@ -22,8 +22,10 @@ export function GameOverOverlay({ result, isBest, bestScore, onRestart, onMenu }
         <Text style={styles.scoreLabel}>SCORE</Text>
         <Text style={styles.score}>{result.score}</Text>
         {isBest ? (
-          <Animated.View entering={ZoomIn.delay(250).springify()} style={styles.badge}>
-            <Text style={styles.badgeText}>NEW BEST!</Text>
+          <Animated.View entering={ZoomIn.delay(250).springify()}>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>NEW BEST!</Text>
+            </View>
           </Animated.View>
         ) : (
           <Text style={styles.bestLine}>Best {bestScore}</Text>

@@ -1,5 +1,7 @@
 // Engine state lives on the UI thread as one mutable object. Enums are plain
-// numeric constants so they copy cheaply into worklets.
+// numeric constants so they copy cheaply into worklets; each is paired with a type of the
+// same name, which is intentional.
+/* eslint-disable @typescript-eslint/no-redeclare */
 
 export const Phase = {
   Ready: 0,

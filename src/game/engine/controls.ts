@@ -25,3 +25,10 @@ export function handleInput(state: GameState, action: Action, seed: number): voi
   }
   applyAction(state, action);
 }
+
+// Returns this frame's event flags and clears them.
+export function takeEvents(state: GameState): number {
+  const ev = state.events;
+  state.events = 0;
+  return ev;
+}

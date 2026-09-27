@@ -6,7 +6,7 @@ import { useFrameCallback, useSharedValue, type FrameInfo } from 'react-native-r
 import { scheduleOnRN, scheduleOnUI } from 'react-native-worklets';
 
 import { useGameStore } from '../store/gameStore';
-import { handleInput, returnToReady, setPaused, startRun } from './engine/controls';
+import { handleInput, returnToReady, setPaused, startRun, takeEvents } from './engine/controls';
 import { createRuntime, type GameRuntime } from './engine/runtime';
 import { stepGame } from './engine/update';
 import { useKeyboardControls } from './input/useKeyboardControls';
@@ -84,7 +84,7 @@ export function useGameLoop({
   useEffect(() => {
     scheduleOnUI(() => {
       'worklet';
-      runtime.value = createRuntime(width, height, characterId, newSeed());
+      runtime.set(createRuntime(width, height, characterId, newSeed()));
     });
   }, [runtime, width, height, characterId]);
 
@@ -111,15 +111,14 @@ export function useGameLoop({
   const onFrame = useCallback(
     (info: FrameInfo) => {
       'worklet';
-      const rt = runtime.value;
+      const rt = runtime.get();
       if (!rt) return;
       const dt = ((info.timeSincePreviousFrame ?? 16) / 1000) * DEV_TIME_SCALE;
       const state = rt.state;
       stepGame(state, dt);
 
-      if (state.events !== 0) {
-        const ev = state.events;
-        state.events = 0;
+      const ev = takeEvents(state);
+      if (ev !== 0) {
         const st = state.stats;
         scheduleOnRN(
           onEvents,
@@ -135,7 +134,7 @@ export function useGameLoop({
 
       const canvas = resources.recorder.beginRecording(resources.bounds);
       renderFrame(canvas, state, rt.render, resources);
-      picture.value = resources.recorder.finishRecordingAsPicture();
+      picture.set(resources.recorder.finishRecordingAsPicture());
     },
     [runtime, picture, resources, onEvents],
   );
@@ -145,7 +144,7 @@ export function useGameLoop({
   const dispatch = useCallback(
     (action: Action) => {
       'worklet';
-      const rt = runtime.value;
+      const rt = runtime.get();
       if (rt) handleInput(rt.state, action, newSeed());
     },
     [runtime],
@@ -153,7 +152,7 @@ export function useGameLoop({
 
   const tapToStart = useCallback(() => {
     'worklet';
-    const rt = runtime.value;
+    const rt = runtime.get();
     if (rt && rt.state.phase === Phase.Ready) startRun(rt.state, newSeed());
   }, [runtime]);
 
@@ -170,7 +169,7 @@ export function useGameLoop({
     const onUI = (fn: (rt: GameRuntime) => void) =>
       scheduleOnUI(() => {
         'worklet';
-        const rt = runtime.value;
+        const rt = runtime.get();
         if (rt) fn(rt);
       });
     return {
