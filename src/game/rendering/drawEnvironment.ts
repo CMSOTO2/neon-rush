@@ -92,7 +92,9 @@ export function drawBuildings(
       const x0 = Math.min(inner, outer);
       const x1 = Math.max(inner, outer);
       const alpha = distanceFade(cam, z0, WORLD.drawDistance);
-      if (alpha <= 0) continue;
+      // Skip buildings entirely behind the near plane; projecting them collapses to the
+      // vanishing point.
+      if (alpha <= 0 || z1 <= cam.z + cam.near + 0.5) continue;
 
       const ci = Math.floor(h3 * env.buildings.length) % env.buildings.length;
       drawBox(

@@ -30,7 +30,9 @@ function sortDrawOrder(state: GameState, scratch: RenderScratch, far: number): n
   const pool = state.obstacles;
   for (let i = 0; i < pool.length; i++) {
     const o = pool[i];
-    if (!o.active || o.z0 > far || o.z1 < scratch.cam.z) continue;
+    // Skip anything fully behind the near plane: projecting it collapses to the
+    // vanishing point.
+    if (!o.active || o.z0 > far || o.z1 <= scratch.cam.z + scratch.cam.near) continue;
     order[n] = i;
     keys[n] = o.z0;
     n++;

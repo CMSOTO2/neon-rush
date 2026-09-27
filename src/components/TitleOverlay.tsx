@@ -52,10 +52,16 @@ export function TitleOverlay({ top, best }: { top: number; best: number }) {
   );
 }
 
+// iOS clips text shadows to the text's own bounds, so pad the box to leave room for the
+// glow and pull it back with negative margins to keep the layout unchanged.
 const glow = (color: string) => ({
   textShadowColor: color,
   textShadowOffset: { width: 0, height: 0 },
   textShadowRadius: 18,
+  paddingHorizontal: 24,
+  paddingVertical: 14,
+  marginHorizontal: -24,
+  marginVertical: -14,
 });
 
 const styles = StyleSheet.create({

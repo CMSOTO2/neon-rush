@@ -27,6 +27,13 @@ const newSeed = (): number => {
   return (Math.random() * 2147483647) | 0;
 };
 
+// Web-only dev aid: ?timescale=0.25 slows the game down to inspect visuals frame by frame.
+const DEV_TIME_SCALE = (() => {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return 1;
+  const v = Number(new URLSearchParams(window.location.search).get('timescale'));
+  return v > 0 && v <= 4 ? v : 1;
+})();
+
 const haptic = (events: number) => {
   if (Platform.OS === 'web') return;
   if (events & GameEvent.Crash) {
@@ -106,7 +113,7 @@ export function useGameLoop({
       'worklet';
       const rt = runtime.value;
       if (!rt) return;
-      const dt = (info.timeSincePreviousFrame ?? 16) / 1000;
+      const dt = ((info.timeSincePreviousFrame ?? 16) / 1000) * DEV_TIME_SCALE;
       const state = rt.state;
       stepGame(state, dt);
 

@@ -60,6 +60,9 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 14,
+    // Room for the glow, which iOS clips to the text bounds.
+    paddingVertical: 10,
+    marginVertical: -10,
   },
   body: { marginTop: 18, gap: 12 },
 });
