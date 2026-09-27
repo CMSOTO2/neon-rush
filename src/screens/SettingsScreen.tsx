@@ -12,8 +12,14 @@ import { useGameStore } from '../store/gameStore';
 import { useProfileStore } from '../store/profileStore';
 
 const TOGGLES: { key: keyof Settings; label: string; detail: string }[] = [
+  { key: 'music', label: 'Music', detail: 'Synthwave soundtrack' },
   { key: 'sfx', label: 'Sound effects', detail: 'Coins, jumps, power-ups and crashes' },
   { key: 'haptics', label: 'Vibration', detail: 'Gentle buzz on crashes and pickups' },
+  {
+    key: 'reduceMotion',
+    label: 'Reduce motion',
+    detail: 'No screen shake, speed lines or flashing',
+  },
 ];
 
 export function SettingsScreen() {

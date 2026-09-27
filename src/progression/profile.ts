@@ -14,6 +14,8 @@ export type Settings = {
   music: boolean;
   sfx: boolean;
   haptics: boolean;
+  // No screen shake, speed lines or flashing (accessibility).
+  reduceMotion: boolean;
 };
 
 export type Profile = {
@@ -52,7 +54,7 @@ export function defaultProfile(now: Date = new Date()): Profile {
       bestScore: 0,
       bestDistance: 0,
     },
-    settings: { music: true, sfx: true, haptics: true },
+    settings: { music: true, sfx: true, haptics: true, reduceMotion: false },
   };
 }
 
@@ -161,6 +163,7 @@ export function sanitizeProfile(raw: unknown, now: Date = new Date()): Profile {
     settings.music = bool(raw.settings.music, settings.music);
     settings.sfx = bool(raw.settings.sfx, settings.sfx);
     settings.haptics = bool(raw.settings.haptics, settings.haptics);
+    settings.reduceMotion = bool(raw.settings.reduceMotion, settings.reduceMotion);
   }
 
   return {

@@ -115,6 +115,11 @@ export function useGameLoop({
   const picture = useSharedValue<SkPicture>(emptyPicture);
   // Upgrade levels from the save, applied to the engine at the start of each run.
   const upgradeLevels = useSharedValue<number[]>(upgrades);
+  const reduceMotion = useProfileStore((s) => s.profile.settings.reduceMotion);
+  const reduceMotionSV = useSharedValue(reduceMotion);
+  useEffect(() => {
+    reduceMotionSV.set(reduceMotion);
+  }, [reduceMotionSV, reduceMotion]);
   useEffect(() => {
     upgradeLevels.set(upgrades);
   }, [upgradeLevels, upgrades]);
@@ -200,6 +205,7 @@ export function useGameLoop({
       if (!rt) return;
       const dt = ((info.timeSincePreviousFrame ?? 16) / 1000) * DEV.timeScale;
       const state = rt.state;
+      state.reduceMotion = reduceMotionSV.get();
       if (DEV_INVINCIBLE && state.phase === Phase.Running) {
         state.invuln = Math.max(state.invuln, 0.2);
       }
@@ -215,7 +221,7 @@ export function useGameLoop({
       renderFrame(canvas, state, rt.render, resources);
       picture.set(resources.recorder.finishRecordingAsPicture());
     },
-    [runtime, picture, resources, onEvents],
+    [runtime, picture, resources, onEvents, reduceMotionSV],
   );
 
   const frame = useFrameCallback(onFrame, true);

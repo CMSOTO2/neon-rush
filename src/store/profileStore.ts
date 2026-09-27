@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AccessibilityInfo } from 'react-native';
 import { create } from 'zustand';
 import { persist, type PersistStorage, type StorageValue } from 'zustand/middleware';
 
@@ -131,6 +132,14 @@ export const useProfileStore = create<ProfileStore>()(
       onRehydrateStorage: () => (state) => {
         useProfileStore.setState({ hydrated: true });
         if (state) setSfxEnabled(state.profile.settings.sfx);
+        // A brand-new player inherits the system's reduce-motion preference.
+        if (state && state.profile.life.runs === 0) {
+          AccessibilityInfo.isReduceMotionEnabled()
+            .then((on) => {
+              if (on) state.setSetting('reduceMotion', true);
+            })
+            .catch(() => {});
+        }
       },
     },
   ),

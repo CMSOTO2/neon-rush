@@ -7,6 +7,7 @@ import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { useMusic } from '../audio/music';
 import { WebPhoneFrame } from '../components/WebPhoneFrame';
 import { FONT_SOURCES } from '../constants/fonts';
 import { NEON_CITY } from '../constants/palette';
@@ -16,6 +17,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 const MENU_SCREENS = ['shop', 'characters', 'missions', 'achievements', 'settings'];
 
 export default function RootLayout() {
+  useMusic();
   const [fontsLoaded, fontError] = useFonts(FONT_SOURCES);
   const done = fontsLoaded || !!fontError;
 

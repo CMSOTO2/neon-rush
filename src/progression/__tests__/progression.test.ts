@@ -113,7 +113,7 @@ describe('save data', () => {
     // Outfit must belong to the character; unowned trail falls back.
     expect(p.loadout.outfit).toBe('blitz-default');
     expect(p.loadout.trail).toBe('trail-none');
-    expect(p.settings).toEqual({ music: false, sfx: true, haptics: true });
+    expect(p.settings).toEqual({ music: false, sfx: true, haptics: true, reduceMotion: false });
   });
 
   test('a saved profile survives a JSON round trip unchanged', () => {

@@ -87,7 +87,7 @@ export function renderFrame(
   cam.x = state.camX;
   cam.z = state.distance - cam.back;
   cam.lift = state.camLift * cam.heightBoost;
-  const shake = state.shake * state.shake;
+  const shake = state.reduceMotion ? 0 : state.shake * state.shake;
   cam.shakeX = shake > 0 ? Math.sin(state.time * 83) * shake * 12 : 0;
   cam.shakeY = shake > 0 ? Math.cos(state.time * 71) * shake * 9 : 0;
   cam.offsetY = -state.menuLift * cam.height * 0.14;

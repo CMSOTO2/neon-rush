@@ -139,6 +139,7 @@ export function createGameState(
     camX: 0,
     camLift: 0,
     menuLift: 1,
+    reduceMotion: false,
     trailX: filled(14, 0),
     trailY: filled(14, 0),
     trailAt: 0,

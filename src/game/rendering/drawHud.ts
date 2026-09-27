@@ -54,7 +54,7 @@ export function drawSpeedLines(
   state: GameState,
 ): void {
   const boost = state.power[PowerUpKind.Boost] > 0;
-  if (!boost && !state.player.flying) return;
+  if ((!boost && !state.player.flying) || state.reduceMotion) return;
   const cx = cam.width / 2;
   const cy = cam.horizonY;
   const frame = Math.floor(state.time * 30);

@@ -442,10 +442,10 @@ export function drawRunner(
     lean += clamp(p.vx * 2.4, -18, 18);
     if (p.stumbleTime > 0) {
       lean += Math.sin(t * 45) * 10;
-      alpha = Math.floor(t * 18) % 2 === 0 ? 0.45 : 1;
+      alpha = state.reduceMotion ? 0.6 : Math.floor(t * 18) % 2 === 0 ? 0.45 : 1;
     } else if (state.invuln > 0) {
       // Grace period after a shield break or power-up: blink so it's clearly temporary.
-      alpha = Math.floor(t * 14) % 2 === 0 ? 0.5 : 1;
+      alpha = state.reduceMotion ? 0.7 : Math.floor(t * 14) % 2 === 0 ? 0.5 : 1;
     }
   }
   // Sink out of sight when falling into a gap.

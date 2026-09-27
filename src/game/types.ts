@@ -201,6 +201,8 @@ export type GameState = {
   // Camera lateral position eases after the player.
   camX: number;
   camLift: number;
+  // Accessibility: suppress shake, speed lines and flashing effects.
+  reduceMotion: boolean;
   // 1 while the main menu is up (scene framed higher), easing to 0 once a run starts.
   menuLift: number;
   // Recent runner positions (newest first) for cosmetic trails.
