@@ -40,13 +40,22 @@ export function RunnerPreview({
 
   const res = useMemo(
     () =>
-      createRenderResources(width, height, 0, height * 0.3, font, font, {
-        character,
-        outfit,
-        accessory,
-        trail,
-        board,
-      }),
+      createRenderResources(
+        width,
+        height,
+        0,
+        height * 0.3,
+        font,
+        font,
+        {
+          character,
+          outfit,
+          accessory,
+          trail,
+          board,
+        },
+        'city',
+      ),
     [width, height, font, character, outfit, accessory, trail, board],
   );
 

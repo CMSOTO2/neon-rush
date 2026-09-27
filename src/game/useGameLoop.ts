@@ -93,6 +93,7 @@ type Options = {
   hudTop: number;
   loadout: Loadout;
   upgrades: number[];
+  world: string;
   hudFont: SkFont;
   hudSmallFont: SkFont;
   // False while another screen (shop, settings...) is on top of the game.
@@ -107,6 +108,7 @@ export function useGameLoop({
   hudTop,
   loadout,
   upgrades,
+  world,
   hudFont,
   hudSmallFont,
   focused,
@@ -127,14 +129,35 @@ export function useGameLoop({
   const { character, outfit, accessory, trail, board } = loadout;
   const resources = useMemo(() => {
     const horizonY = createCamera(width, height).horizonY;
-    return createRenderResources(width, height, hudTop, horizonY, hudFont, hudSmallFont, {
-      character,
-      outfit,
-      accessory,
-      trail,
-      board,
-    });
-  }, [width, height, hudTop, hudFont, hudSmallFont, character, outfit, accessory, trail, board]);
+    return createRenderResources(
+      width,
+      height,
+      hudTop,
+      horizonY,
+      hudFont,
+      hudSmallFont,
+      {
+        character,
+        outfit,
+        accessory,
+        trail,
+        board,
+      },
+      world,
+    );
+  }, [
+    width,
+    height,
+    hudTop,
+    hudFont,
+    hudSmallFont,
+    character,
+    outfit,
+    accessory,
+    trail,
+    board,
+    world,
+  ]);
 
   // The runtime is built on the UI thread so the worklets own a plain mutable object.
   useEffect(() => {

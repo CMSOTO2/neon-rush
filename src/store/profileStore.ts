@@ -4,6 +4,8 @@ import { create } from 'zustand';
 import { persist, type PersistStorage, type StorageValue } from 'zustand/middleware';
 
 import { setSfxEnabled } from '../audio/sfx';
+import { ENVIRONMENTS } from '../constants/palette';
+import { levelFromXp } from '../progression/levels';
 import { applyRun, type RunRewards } from '../progression/applyRun';
 import { cosmetic, type CosmeticSlot, type Loadout } from '../progression/cosmetics';
 import { dailyFor, todayKey } from '../progression/daily';
@@ -53,6 +55,7 @@ type ProfileStore = {
   equip: (slot: CosmeticSlot, id: string) => void;
   setSetting: (key: keyof Settings, value: boolean) => void;
   refreshDaily: () => void;
+  setWorld: (id: string) => void;
   resetProgress: () => void;
 };
 
@@ -114,6 +117,13 @@ export const useProfileStore = create<ProfileStore>()(
         const p = get().profile;
         const daily = dailyFor(todayKey(), p.daily);
         if (daily !== p.daily) set({ profile: { ...p, daily } });
+      },
+
+      setWorld: (id) => {
+        const p = get().profile;
+        const env = ENVIRONMENTS.find((e) => e.id === id);
+        if (!env || levelFromXp(p.xp).level < env.unlockLevel) return;
+        set({ profile: { ...p, world: id } });
       },
 
       resetProgress: () => set({ profile: defaultProfile() }),

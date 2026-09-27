@@ -1,7 +1,14 @@
-// Neon City theme. Other environments (beach, amusement park, snow, space) will supply
-// their own EnvironmentPalette with the same keys.
+// Environments. Each supplies a palette with the same keys plus a scenery style; the
+// renderer reads only these, so a new world (amusement park, snow, space...) is a new
+// entry in ENVIRONMENTS plus, if it needs one, a scenery drawer.
+
+export type Scenery = 'city' | 'beach';
 
 export type EnvironmentPalette = {
+  scenery: Scenery;
+  // Ground gradient: at the horizon, just below it, and at the bottom of the screen.
+  groundHorizon: string;
+  groundBottom: string;
   skyTop: string;
   skyMid: string;
   skyHorizon: string;
@@ -23,6 +30,9 @@ export type EnvironmentPalette = {
 };
 
 export const NEON_CITY: EnvironmentPalette = {
+  scenery: 'city',
+  groundHorizon: '#3a1466',
+  groundBottom: '#0a0418',
   skyTop: '#140a33',
   skyMid: '#4a1780',
   skyHorizon: '#ff4fa3',
@@ -42,6 +52,49 @@ export const NEON_CITY: EnvironmentPalette = {
   buildings: ['#2b1c63', '#35227a', '#1f2b6e', '#3a1f66'],
   windows: ['#5ef2ff', '#ff6ad5', '#ffd84a', '#a6ff4d'],
 };
+
+export const SUNSET_BEACH: EnvironmentPalette = {
+  scenery: 'beach',
+  // Sea at the horizon fading into warm sand.
+  groundHorizon: '#2a7fd6',
+  groundBottom: '#b8834e',
+  skyTop: '#2b1055',
+  skyMid: '#d6457a',
+  skyHorizon: '#ff9e5e',
+  horizonGlow: '#ffd27a',
+  sunTop: '#fff2a8',
+  sunBottom: '#ff6a3d',
+  stars: '#fff4d6',
+  skyline: '#5a2a6e',
+  ground: '#e8b97a',
+  groundGrid: '#fff4d6',
+  road: '#8a5a3c',
+  roadFar: '#a8704a',
+  roadSeam: '#5e3a24',
+  laneDash: '#fff4d6',
+  roadEdge: '#2ee6c5',
+  roadEdgeGlow: '#2ee6c5',
+  // Beach huts and their lights.
+  buildings: ['#2ee6c5', '#ff6a8a', '#ffd84a', '#7b5cff'],
+  windows: ['#ffd84a', '#ff9e5e', '#fff4d6'],
+};
+
+export type EnvironmentDef = {
+  id: string;
+  name: string;
+  palette: EnvironmentPalette;
+  // Player level needed to run here.
+  unlockLevel: number;
+};
+
+export const ENVIRONMENTS: EnvironmentDef[] = [
+  { id: 'city', name: 'Neon City', palette: NEON_CITY, unlockLevel: 1 },
+  { id: 'beach', name: 'Sunset Beach', palette: SUNSET_BEACH, unlockLevel: 3 },
+];
+
+export function getEnvironment(id: string): EnvironmentDef {
+  return ENVIRONMENTS.find((e) => e.id === id) ?? ENVIRONMENTS[0];
+}
 
 // Obstacle materials: front, side and top shades so boxes read as 3D.
 export const OBSTACLE_COLORS = {

@@ -10,6 +10,7 @@ import { PauseButton } from '../components/PauseButton';
 import { PauseOverlay } from '../components/PauseOverlay';
 import { MainMenu } from '../components/MainMenu';
 import { ReviveOverlay } from '../components/ReviveOverlay';
+import { DEV } from '../constants/dev';
 import { HUD_FONT_FILE } from '../constants/fonts';
 import { NEON_CITY } from '../constants/palette';
 import { useGameLoop } from '../game/useGameLoop';
@@ -57,6 +58,8 @@ function Game({ width, height, hudFont, hudSmallFont }: GameProps) {
   const revivesUsed = useGameStore((s) => s.revivesUsed);
   const loadout = useProfileStore((s) => s.profile.loadout);
   const upgrades = useProfileStore((s) => s.profile.upgrades);
+  const savedWorld = useProfileStore((s) => s.profile.world);
+  const world = DEV.world ?? savedWorld;
 
   const { picture, gesture, controls } = useGameLoop({
     width,
@@ -64,6 +67,7 @@ function Game({ width, height, hudFont, hudSmallFont }: GameProps) {
     hudTop: insets.top,
     loadout,
     upgrades,
+    world,
     hudFont,
     hudSmallFont,
     focused,

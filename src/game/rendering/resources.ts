@@ -14,7 +14,12 @@ import {
   type SkHostRect,
 } from '@shopify/react-native-skia';
 
-import { NEON_CITY, OBSTACLE_COLORS, UI, type EnvironmentPalette } from '../../constants/palette';
+import {
+  getEnvironment,
+  OBSTACLE_COLORS,
+  UI,
+  type EnvironmentPalette,
+} from '../../constants/palette';
 import { characterLook, type CharacterColors } from '../characters/characters';
 import { cosmetic, type Loadout } from '../../progression/cosmetics';
 import { POWERUPS } from '../powerups/powerups';
@@ -66,6 +71,8 @@ export type RenderResources = {
   sun: SkShader;
   backdrop: SkPicture;
   env: {
+    scenery: number;
+    leaves: SkColor[];
     road: SkColor;
     roadFar: SkColor;
     roadSeam: SkColor;
@@ -148,11 +155,14 @@ function recordBackdrop(
     canvas.drawRect(Skia.XYWHRect(width / 2 - sunR, bandY, sunR * 2, h), paint);
   }
 
-  // Two skyline layers: far (pale) and near (dark).
-  const layers = [
-    { color: '#6a2a9e', minH: 0.08, maxH: 0.2, step: [14, 30] },
-    { color: env.skyline, minH: 0.05, maxH: 0.16, step: [18, 40] },
-  ];
+  // Two skyline layers: far (pale) and near (dark). The beach gets low rolling islands.
+  const beach = env.scenery === 'beach';
+  const layers = beach
+    ? [{ color: env.skyline, minH: 0.015, maxH: 0.06, step: [40, 90] }]
+    : [
+        { color: '#6a2a9e', minH: 0.08, maxH: 0.2, step: [14, 30] },
+        { color: env.skyline, minH: 0.05, maxH: 0.16, step: [18, 40] },
+      ];
   for (const layer of layers) {
     paint.setColor(Skia.Color(layer.color));
     const path = Skia.PathBuilder.Make();
@@ -161,6 +171,15 @@ function recordBackdrop(
     while (x < width + pad) {
       const w = layer.step[0] + rand() * (layer.step[1] - layer.step[0]);
       const h = horizonY * (layer.minH + rand() * (layer.maxH - layer.minH));
+      if (beach) {
+        // Rounded hill instead of a flat roof.
+        for (let i = 1; i <= 6; i++) {
+          const a = (i / 6) * Math.PI;
+          path.lineTo(x + (w * i) / 6, horizonY - Math.sin(a) * h);
+        }
+        x += w;
+        continue;
+      }
       path.lineTo(x, horizonY - h);
       if (rand() < 0.3) {
         // Antenna or spire.
@@ -191,8 +210,9 @@ export function createRenderResources(
   hudFont: SkFont,
   hudSmallFont: SkFont,
   loadout: Loadout,
+  worldId: string,
 ): RenderResources {
-  const env = NEON_CITY;
+  const env = getEnvironment(worldId).palette;
 
   const fill = Skia.Paint();
   fill.setAntiAlias(true);
@@ -222,8 +242,8 @@ export function createRenderResources(
   const groundShade = Skia.Shader.MakeLinearGradient(
     { x: 0, y: horizonY },
     { x: 0, y: height },
-    [Skia.Color('#3a1466'), Skia.Color(env.ground), Skia.Color('#0a0418')],
-    [0, 0.35, 1],
+    [Skia.Color(env.groundHorizon), Skia.Color(env.ground), Skia.Color(env.groundBottom)],
+    [0, env.scenery === 'beach' ? 0.12 : 0.35, 1],
     TileMode.Clamp,
   );
   const sunR = width * 0.26;
@@ -257,6 +277,9 @@ export function createRenderResources(
     sun,
     backdrop: recordBackdrop(width, horizonY, env, sky, sun),
     env: {
+      // 0 = city buildings, 1 = beach palms and huts.
+      scenery: env.scenery === 'beach' ? 1 : 0,
+      leaves: [Skia.Color('#3ddc84'), Skia.Color('#1fae6a')],
       road: Skia.Color(env.road),
       roadFar: Skia.Color(env.roadFar),
       roadSeam: Skia.Color(env.roadSeam),

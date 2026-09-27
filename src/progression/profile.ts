@@ -1,3 +1,4 @@
+import { ENVIRONMENTS } from '../constants/palette';
 import { MAX_UPGRADE_LEVEL } from '../game/powerups/powerups';
 import { POWERUP_COUNT } from '../game/types';
 import type { LifetimeStats } from './achievements';
@@ -30,6 +31,8 @@ export type Profile = {
   daily: DailyState;
   life: LifetimeStats;
   settings: Settings;
+  // Selected environment id (see constants/palette ENVIRONMENTS).
+  world: string;
 };
 
 export function defaultProfile(now: Date = new Date()): Profile {
@@ -55,6 +58,7 @@ export function defaultProfile(now: Date = new Date()): Profile {
       bestDistance: 0,
     },
     settings: { music: true, sfx: true, haptics: true, reduceMotion: false },
+    world: 'city',
   };
 }
 
@@ -185,5 +189,9 @@ export function sanitizeProfile(raw: unknown, now: Date = new Date()): Profile {
     daily,
     life,
     settings,
+    world:
+      typeof raw.world === 'string' && ENVIRONMENTS.some((e) => e.id === raw.world)
+        ? raw.world
+        : 'city',
   };
 }

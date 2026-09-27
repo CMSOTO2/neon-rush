@@ -22,6 +22,7 @@ import { IconTile } from './ui/IconTile';
 import { LevelBadge } from './ui/LevelBadge';
 import { ProgressBar } from './ui/ProgressBar';
 import { NeonButton } from './NeonButton';
+import { WorldPicker } from './WorldPicker';
 
 type Props = { top: number; bottom: number; onPlay: () => void };
 
@@ -65,6 +66,8 @@ export function MainMenu({ top, bottom, onPlay }: Props) {
           <Text style={styles.best}>BEST {profile.life.bestScore.toLocaleString()}</Text>
         )}
       </View>
+
+      <WorldPicker />
 
       <View style={styles.cards} pointerEvents="box-none">
         <View style={styles.card}>
@@ -160,7 +163,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   spacer: { flex: 1 },
-  cards: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginTop: 18 },
+  cards: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginTop: 12 },
   card: {
     flex: 1,
     gap: 6,
