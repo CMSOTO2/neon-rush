@@ -1,7 +1,7 @@
 import { Canvas, Picture, useFont, type SkFont } from '@shopify/react-native-skia';
 import { router, useIsFocused } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { BackHandler, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -96,6 +96,33 @@ function Game({ width, height, hudFont, hudSmallFont }: GameProps) {
     useGameStore.setState({ pendingLevel: null });
     controls.startLevel(pendingLevel);
   }, [focused, pendingLevel, controls]);
+
+  // Android back button: pause mid-run, resume from pause, and leave result screens for
+  // the menu. It never exits mid-run; on the menu it does what Android normally does.
+  // Other screens (shop, levels...) are left to the router.
+  useEffect(() => {
+    if (!focused) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      switch (useGameStore.getState().phase) {
+        case 'running':
+          controls.pause();
+          return true;
+        case 'paused':
+          controls.resume();
+          return true;
+        case 'revive':
+          controls.declineRevive();
+          return true;
+        case 'over':
+        case 'complete':
+          controls.toMenu();
+          return true;
+        default:
+          return false;
+      }
+    });
+    return () => sub.remove();
+  }, [focused, controls]);
 
   const next = level ? nextLevel(level) : undefined;
 

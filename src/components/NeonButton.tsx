@@ -77,6 +77,9 @@ export function NeonButton({
         style={[
           styles.button,
           size === 'small' && styles.buttonSmall,
+          // Android draws an elevation shadow through a translucent background as a dark
+          // box, so only the solid button gets one.
+          variant === 'primary' && styles.raised,
           { backgroundColor: c.bg, borderColor: c.border, shadowColor: c.glow },
           animated,
         ]}
@@ -118,8 +121,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     shadowOffset: { width: 0, height: 0 },
     shadowRadius: 14,
-    elevation: 8,
   },
+  raised: { elevation: 8 },
   buttonSmall: { minHeight: 44, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 14 },
   label: {
     fontFamily: FONTS.bold,
