@@ -2,7 +2,7 @@
 
 Where Neon Rush stands and what to do next, in priority order. The original brief is [SPEC.md](SPEC.md); the post-launch money plan is [MONETIZATION.md](MONETIZATION.md).
 
-## Where things stand (2026-09-27)
+## Where things stand (2026-09-27, evening)
 
 All four build milestones from the brief are in place, plus a level campaign:
 
@@ -19,9 +19,11 @@ All four build milestones from the brief are in place, plus a level campaign:
 | Worlds: Neon City, Sunset Beach                                                                                       | Done                    |
 | Audio: generated SFX and music; haptics                                                                               | Done                    |
 | Save: versioned, validated, local only                                                                                | Done                    |
+| First-run tutorial (swipe lessons, replayable from Settings)                                                          | Done                    |
+| Menus laid out for iPhone SE through Pro Max                                                                          | Done                    |
 | Accessibility: reduce motion, screen-reader labels on menus                                                           | Partly                  |
-| Tested on a real phone                                                                                                | **Not yet**             |
-| Tested on Android                                                                                                     | **Not yet**             |
+| Tested on a real phone                                                                                                | iPhone 16 Pro Max, once |
+| Tested on Android                                                                                                     | Emulator, briefly       |
 | App icon, splash, store assets                                                                                        | **Still Expo defaults** |
 
 Measured on the iOS simulator: about 0.05 ms of simulation and 1.8 ms of drawing per frame (the 60 FPS budget is 16.7 ms).
@@ -32,15 +34,15 @@ Measured on the iOS simulator: about 0.05 ms of simulation and 1.8 ms of drawing
 
 These block a TestFlight or internal-testing build.
 
-1. **Play it on real phones.** Open it in Expo Go on an iPhone and an Android phone. Check:
-   - Swipe feel: the threshold is 4.5% of screen width (`input/useSwipeGesture.ts`). Too twitchy or too sluggish?
-   - Lane change speed, jump height and airtime, slide length (`game/config.ts`).
-   - That the first 30 seconds are fun: first obstacle at 55 m, trams from 60 m, gates from 180 m (`levels/difficulty.ts`).
-2. **Android pass.** Nothing Android-specific has run yet. Watch for font loading, audio mode, haptics strength, the Skia canvas at high DPI, and the status and navigation bars.
-3. **Handle the Android back button.** Nothing handles `BackHandler` yet. During a run, back should pause; on pause, it should resume or go to the menu; on menu screens it should go back. It must never exit the app mid-run.
+1. **Play it on real phones.** First iPhone session (16 Pro Max) found two bugs, both fixed:
+   - _Frame hitches on every landing and power-up._ expo-haptics creates a feedback generator on the main thread per call, and the game loop runs on that thread. Haptics now fire only on hits and crashes, throttled to one per 400 ms. **Re-test:** jumps and pickups should be smooth. If hits still hitch, drop haptics to crash-only.
+   - _No sound._ The audio session respected the silent switch (the simulator has none). It now plays through it and mixes with other audio.
+     Still to check on a phone: swipe feel (threshold is 4.5% of screen width, `input/useSwipeGesture.ts`), lane change speed, jump height and slide length (`game/config.ts`), whether the first 30 seconds are fun, and the tutorial with a real first-time player.
+2. **Android pass.** The game runs in Expo Go on the Android emulator (API 36): fonts, Skia canvas and HUD render correctly, and back pauses a run. Fixed: translucent buttons showed a dark box (elevation shadow). The emulator was too starved to judge frame rate or audio, so this still needs a real Android phone: audio mode, haptics strength, the status and navigation bars.
+3. ~~**Handle the Android back button.**~~ Done: back pauses a run, resumes from pause, declines a continue, and leaves result panels for the menu (`screens/GameScreen.tsx`).
 4. **Measure performance on a mid-range Android phone** with `EXPO_PUBLIC_PERF=1`. If drawing is over ~8 ms a frame, the cheapest wins are: fewer window rectangles on buildings, batching same-coloured quads into one path (as the lane dashes already are), and dropping scenery detail beyond ~80 m.
 5. **App identity.** Replace the Expo template icon, adaptive icon, splash and favicon in `assets/`. Set the real `ios.bundleIdentifier` and `android.package` in `app.json` (currently placeholders `com.cmsoto.neonrush`).
-6. **First-run tutorial.** Young players need to be shown the swipes. On the very first run: pause at the first barrier with a "swipe up" hint, then "swipe down" at the first gate, "swipe sideways" at the first tram. Store `tutorialDone` in the profile.
+6. ~~**First-run tutorial.**~~ Done: the first endless run uses three scripted rows (barrier, laser gate, two trams) and freezes before each with a swipe hint until the player makes the move (`systems/tutorialSystem.ts`). `tutorialDone` is saved; Settings can replay it. Levels don't run it, so a player who opens Levels first skips the lessons until their first endless run.
 7. **Economy check.** Play 10–15 runs and note coins per run. Upgrade costs (300 → 9,500), cosmetic prices (600–2,500) and the continue cost (150, then 300) should feel reachable. Early levels should unlock something every few runs.
 
 ## P1: soon after first testers

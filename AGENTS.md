@@ -62,4 +62,8 @@ A 2.5D endless runner. Start with README.md (what exists, architecture), ROADMAP
 
 - iOS simulator: `EXPO_PUBLIC_AUTOSTART=1 npx expo start --ios` (see the dev switch table in README.md), screenshots with `xcrun simctl io booted screenshot`, screens via deep links like `xcrun simctl openurl booted exp://127.0.0.1:<port>/--/shop`.
 - Web: `npx expo start --web`; the app renders in a phone-shaped frame with arrow-key controls. A hidden or background tab gets no animation frames.
+- Small-screen check: boot the iPhone SE (3rd gen) simulator and install Expo Go from `~/.expo/ios-simulator-app-cache/`. Expo Go's one-time dev-menu sheet covers the app; skip it with `xcrun simctl spawn <udid> defaults write host.exp.Exponent EXDevMenuIsOnboardingFinished -bool YES`.
+- A second Metro with dev switches (e.g. `EXPO_PUBLIC_AUTOSTART=1 EXPO_PUBLIC_TUTORIAL=1 npx expo start --port 8082`) leaves the main one untouched.
+- Android emulator: `adb shell input tap x y` and `adb shell input keyevent 4` (back) give real touch and back input; `adb exec-out screencap -p` takes screenshots.
+- The simulator has no Taptic Engine or ring switch, so haptic stalls and silent-mode audio only show up on a real phone.
 - Regenerate audio with `npm run sfx` and `npm run music`.

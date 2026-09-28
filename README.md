@@ -14,7 +14,7 @@ Scan the QR code with **Expo Go** on your phone (same Wi-Fi). Every native modul
 - **iOS simulator:** `npx expo start --ios`
 - **Browser (testing only):** `npx expo start --web`. The app renders in a phone-shaped frame. Arrow keys, WASD or Space control the runner. Add `?timescale=0.25` to the URL to slow the game down.
 
-Controls on a phone: swipe left or right to change lanes, up to jump, down to slide. Swiping down in the air slams you to the ground and slides. Tap or swipe on the title screen to start.
+Controls on a phone: swipe left or right to change lanes, up to jump, down to slide. Swiping down in the air slams you to the ground and slides. Tap or swipe on the title screen to start. The first endless run teaches the swipes with a short tutorial.
 
 ## Checks
 
@@ -34,7 +34,8 @@ npm run format      # prettier
 - **Cosmetics** (no gameplay effect): 4 runners, alternate outfits, head gear, trails, and hoverboards, unlocked with coins, levels or achievements.
 - **Worlds.** Neon City, and Sunset Beach (unlocks at level 3).
 - **Audio.** Original synthesized sound effects and a synthwave loop (`npm run sfx`, `npm run music` regenerate them), plus haptics.
-- **Settings.** Music, sound effects, vibration, reduce motion (defaults to the system setting), and reset progress.
+- **Tutorial.** The first endless run freezes before a barrier, a laser gate and two trams with a swipe hint, and waits for the move. It can be replayed from Settings.
+- **Settings.** Music, sound effects, vibration, reduce motion (defaults to the system setting), replay tutorial, and reset progress.
 
 No ads, no purchases, fully offline. See [MONETIZATION.md](MONETIZATION.md) for the post-launch plan.
 
@@ -51,6 +52,7 @@ Dev builds only. Set them when starting Metro, e.g. `EXPO_PUBLIC_AUTOSTART=1 npx
 | `EXPO_PUBLIC_WORLD=beach`    | Show a world regardless of unlocks                              |
 | `EXPO_PUBLIC_TIMESCALE=0.25` | Slow motion                                                     |
 | `EXPO_PUBLIC_PERF=1`         | Log simulation and drawing time per frame                       |
+| `EXPO_PUBLIC_TUTORIAL=1`     | Play the first-run tutorial on every endless run                |
 
 Screens can be opened directly in Expo Go with deep links, e.g. `xcrun simctl openurl booted exp://127.0.0.1:8081/--/shop`.
 
@@ -84,6 +86,10 @@ src/
 
 **The whole game loop runs on the UI thread.** Engine files start with a `'worklet';` directive. A Reanimated frame callback steps the simulation, records the frame into a Skia picture, and hands it to a `<Canvas>`. Swipes are recognised in Gesture Handler worklets and go straight into the engine, so input never waits on the JS thread. React only hears about phase changes (start, game over, level complete) through `scheduleOnRN`, so it re-renders a few times per run, not every frame. The loop stops while paused or while another screen covers the game.
 
+**Haptics and audio stay off the frame.** Gesture and frame worklets run on the main thread, and so does expo-haptics, which builds a feedback generator per call. So haptics only fire on hits (throttled), never on routine events like landing. The audio session plays with the silent switch on and mixes with other apps.
+
+**The main menu is laid out around the runner** (`components/menuLayout.ts`): the scene is raised just enough for the runner's feet to clear the bottom buttons, and the title, world picker and cards fill the space above its head. The same numbers go to the renderer, so the layout holds from an iPhone SE to a Pro Max.
+
 **Rendering is procedural 2.5D.** A pinhole camera sits behind the runner, sized from the viewport so the framing adapts to any screen. Obstacles and scenery are shaded boxes and paths, and the runner is drawn from joint positions, so there are no image assets to load. Paints, the path builder and rects are reused every frame; obstacles, coins, pickups and particles come from fixed pools. Measured on the iOS simulator with `EXPO_PUBLIC_PERF=1`: about 0.05 ms of simulation and 1.8 ms of drawing per frame.
 
 **Adding content.** A power-up is an entry in `game/powerups/powerups.ts` plus its effect in `systems/powerUpSystem.ts`. A world is an entry in `constants/palette.ts` (and a scenery drawer if it needs new props). A cosmetic is an entry in `progression/cosmetics.ts` (characters also go in `game/characters/characters.ts`). Missions and achievements are data in `progression/`.
@@ -101,4 +107,4 @@ Gotchas:
 
 ## Status and what's next
 
-Milestones 1 to 4 from the brief are done, plus the level campaign. What to do next, in priority order (real-device testing, Android, the back button, app icon, a first-run tutorial, then content), is in [ROADMAP.md](ROADMAP.md).
+Milestones 1 to 4 from the brief are done, plus the level campaign, the Android back button and a first-run tutorial. The first iPhone session's bugs (hitches, no sound) are fixed but need a re-test on the phone. What's next (real-device and Android testing, app icon and identity, the economy check, then content) is in [ROADMAP.md](ROADMAP.md).
