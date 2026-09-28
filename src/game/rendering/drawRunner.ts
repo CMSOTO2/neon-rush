@@ -7,6 +7,7 @@ import { HeadStyle } from '../characters/characters';
 import { Phase, PowerUpKind, type GameState } from '../types';
 import { scaleAt, sx, sy, type Camera } from './camera';
 import type { RenderResources } from './resources';
+import { drawBuilt } from './primitives';
 
 // The runner is drawn procedurally from behind in local meters (y up, origin at the feet),
 // so every pose is a handful of joint positions. Big, exaggerated poses keep each state
@@ -63,7 +64,7 @@ function tri(
   pb.close();
   res.fill.setColor(color);
   res.fill.setAlphaf(alpha);
-  canvas.drawPath(pb.detach(), res.fill);
+  drawBuilt(canvas, pb, res.fill);
 }
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
@@ -172,7 +173,7 @@ function drawHead(
       res.stroke.setColor(hp);
       res.stroke.setAlphaf(alpha);
       res.stroke.setStrokeWidth(0.05);
-      canvas.drawPath(pb.detach(), res.stroke);
+      drawBuilt(canvas, pb, res.stroke);
       limb(canvas, res, hx - hr * 1.04, hy - 0.06, hx - hr * 1.04, hy + 0.05, 0.13, hp, alpha);
       limb(canvas, res, hx + hr * 1.04, hy - 0.06, hx + hr * 1.04, hy + 0.05, 0.13, hp, alpha);
       break;

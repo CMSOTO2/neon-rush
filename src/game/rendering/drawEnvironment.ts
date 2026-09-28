@@ -9,9 +9,9 @@ import {
   addGroundQuad,
   distanceFade,
   drawBox,
+  drawBuilt,
   fillQuad,
   fillRect,
-  flushPath,
   groundQuad,
   type FaceRect,
 } from './primitives';
@@ -255,13 +255,17 @@ export function drawBuildings(
       const fh = face.b - face.t;
       if (fw < 24) continue;
       const rows = Math.min(8, Math.floor(height / 2.6));
+      // Every window on a building shares one colour, so set the paint once.
+      res.fill.setColor(win);
+      res.fill.setAlphaf(0.75 * alpha);
+      const ww = fw * 0.2;
+      const wh = (fh * 0.5) / rows;
       for (let r = 0; r < rows; r++) {
+        const wt = face.t + fh * (0.06 + r * (0.9 / rows));
         for (let c = 0; c < cols; c++) {
-          const lit = hash01(id * 31 + r * 7 + c) > 0.35;
-          if (!lit) continue;
-          const wl = face.l + fw * (0.12 + c * 0.28);
-          const wt = face.t + fh * (0.06 + r * (0.9 / rows));
-          fillRect(canvas, res, wl, wt, wl + fw * 0.2, wt + (fh * 0.5) / rows, win, 0.75 * alpha);
+          if (hash01(id * 31 + r * 7 + c) <= 0.35) continue;
+          res.rect.setXYWH(face.l + fw * (0.12 + c * 0.28), wt, ww, wh);
+          canvas.drawRect(res.rect, res.fill);
         }
       }
       // Rooftop edge light, some of them blinking.
@@ -284,22 +288,43 @@ export function drawRoad(canvas: SkCanvas, res: RenderResources, cam: Camera): v
   groundQuad(canvas, res, cam, -ROAD_HALF, ROAD_HALF, zNear, zFar, env.road, 1);
   groundQuad(canvas, res, cam, -ROAD_HALF, ROAD_HALF, cam.z + 70, zFar, env.roadFar, 0.5);
 
-  // Panel seams scroll toward the camera; they're the main sense of speed.
+  // Panel seams scroll toward the camera; they're the main sense of speed. Each is a thin
+  // strip, drawn as a plain rect (indistinguishable from the true trapezoid at this
+  // thickness). Batching them into one many-contour path looked cheaper, but Skia can't
+  // fill an anti-aliased path like that on the GPU and rasterized it on the CPU instead.
   const seam = 4;
+  res.fill.setColor(env.roadSeam);
+  res.fill.setAlphaf(0.8);
   for (let z = Math.ceil(zNear / seam) * seam; z < zFar; z += seam) {
-    addGroundQuad(res, cam, -ROAD_HALF, ROAD_HALF, z, z + 0.25);
+    const z0 = Math.max(z, zNear);
+    const z1 = z + 0.25;
+    if (z1 <= z0) continue;
+    const sn = scaleAt(cam, z0);
+    const sf = scaleAt(cam, z1);
+    const sm = (sn + sf) * 0.5;
+    const top = sy(cam, 0, sf);
+    res.rect.setXYWH(
+      sx(cam, -ROAD_HALF, sm),
+      top,
+      ROAD_HALF * 2 * sm,
+      Math.max(1, sy(cam, 0, sn) - top),
+    );
+    canvas.drawRect(res.rect, res.fill);
   }
-  flushPath(canvas, res, env.roadSeam, 0.8);
 
-  // Lane dashes, batched into one path (the far ones are hidden by the horizon haze).
+  // Lane dashes, one small convex shape each (see the seams note above). The far ones are
+  // hidden by the horizon haze.
   const dash = 6;
+  res.fill.setColor(env.laneDash);
+  res.fill.setAlphaf(0.85);
   for (let lane = 1; lane < LANE_COUNT; lane++) {
     const x = (lane - LANE_COUNT / 2) * LANE_WIDTH;
     for (let z = Math.floor(zNear / dash) * dash; z < zFar - 20; z += dash) {
-      addGroundQuad(res, cam, x - 0.07, x + 0.07, z, z + 2.6);
+      if (addGroundQuad(res, cam, x - 0.07, x + 0.07, z, z + 2.6)) {
+        drawBuilt(canvas, res.pb, res.fill);
+      }
     }
   }
-  flushPath(canvas, res, env.laneDash, 0.85);
 
   // Neon road edges: a wide faint glow under a thin bright core.
   for (let side = -1; side <= 1; side += 2) {

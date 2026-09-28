@@ -13,7 +13,7 @@ export type GameRuntime = {
   state: GameState;
   render: RenderScratch;
   // Dev-only frame timing accumulators (EXPO_PUBLIC_PERF=1).
-  perf: { step: number; draw: number; frames: number; worst: number };
+  perf: { step: number; draw: number; frames: number; worst: number; slow: number };
 };
 
 export function createRuntime(
@@ -32,6 +32,6 @@ export function createRuntime(
   return {
     state: createGameState(width, height, characterId, seed),
     render: { cam: createCamera(width, height), face: createFaceRect(), order, keys },
-    perf: { step: 0, draw: 0, frames: 0, worst: 0 },
+    perf: { step: 0, draw: 0, frames: 0, worst: 0, slow: 0 },
   };
 }

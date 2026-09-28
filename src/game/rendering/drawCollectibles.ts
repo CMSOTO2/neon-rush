@@ -5,7 +5,7 @@ import type { SkCanvas, SkColor } from '@shopify/react-native-skia';
 import { COINS, laneX, WORLD } from '../config';
 import { PowerUpKind, type Coin, type GameState, type Pickup } from '../types';
 import { scaleAt, sx, sy, type Camera } from './camera';
-import { distanceFade } from './primitives';
+import { distanceFade, drawBuilt } from './primitives';
 import type { RenderResources } from './resources';
 
 function dot(
@@ -38,7 +38,7 @@ function poly(
   pb.close();
   res.fill.setColor(color);
   res.fill.setAlphaf(alpha);
-  canvas.drawPath(pb.detach(), res.fill);
+  drawBuilt(canvas, pb, res.fill);
 }
 
 function stroke(
@@ -88,7 +88,7 @@ export function drawPowerIcon(
       res.stroke.setColor(color);
       res.stroke.setAlphaf(alpha);
       res.stroke.setStrokeWidth(w);
-      canvas.drawPath(pb.detach(), res.stroke);
+      drawBuilt(canvas, pb, res.stroke);
       stroke(
         canvas,
         res,

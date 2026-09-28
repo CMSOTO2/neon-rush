@@ -9,9 +9,9 @@ import {
   addGroundQuad,
   distanceFade,
   drawBox,
+  drawBuilt,
   fillQuad,
   fillRect,
-  flushPath,
   groundQuad,
   type FaceRect,
 } from './primitives';
@@ -425,15 +425,19 @@ export function drawFinish(
   // Two rows of checks on the road.
   const cols = 12;
   const cw = (half * 2) / cols;
+  // One convex shape per check: a single many-contour path would be filled on the CPU.
   for (let pass = 0; pass < 2; pass++) {
+    res.fill.setColor(pass === 0 ? res.ui.white : res.ui.shadow);
+    res.fill.setAlphaf(alpha);
     for (let row = 0; row < 2; row++) {
       for (let c = 0; c < cols; c++) {
         if ((c + row) % 2 !== pass) continue;
         const x0 = -half + c * cw;
-        addGroundQuad(res, cam, x0, x0 + cw, z + row * 0.6, z + (row + 1) * 0.6);
+        if (addGroundQuad(res, cam, x0, x0 + cw, z + row * 0.6, z + (row + 1) * 0.6)) {
+          drawBuilt(canvas, res.pb, res.fill);
+        }
       }
     }
-    flushPath(canvas, res, pass === 0 ? res.ui.white : res.ui.shadow, alpha);
   }
 
   const post = res.obstacle.gatePost;

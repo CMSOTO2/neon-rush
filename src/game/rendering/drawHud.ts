@@ -8,6 +8,7 @@ import { Action, GameMode, ParticleKind, Phase, PowerUpKind, type GameState } fr
 import { scaleAt, sx, sy, type Camera } from './camera';
 import { drawPowerIcon } from './drawCollectibles';
 import type { RenderResources } from './resources';
+import { drawBuilt } from './primitives';
 
 export function drawParticles(
   canvas: SkCanvas,
@@ -123,7 +124,7 @@ function chevron(
   pb.moveTo(tx - dx * size + dy * size, ty - dy * size - dx * size);
   pb.lineTo(tx, ty);
   pb.lineTo(tx - dx * size - dy * size, ty - dy * size + dx * size);
-  canvas.drawPath(pb.detach(), res.stroke);
+  drawBuilt(canvas, pb, res.stroke);
 }
 
 const HINTS: Record<number, { title: string; detail: string; dx: number; dy: number }> = {

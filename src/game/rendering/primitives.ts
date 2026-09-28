@@ -1,6 +1,6 @@
 'worklet';
 
-import type { SkCanvas, SkColor } from '@shopify/react-native-skia';
+import type { SkCanvas, SkColor, SkPaint, SkPathBuilder } from '@shopify/react-native-skia';
 
 import { scaleAt, sx, sy, type Camera } from './camera';
 import type { RenderResources } from './resources';
@@ -11,6 +11,16 @@ export type FaceRect = { l: number; r: number; t: number; b: number; s: number; 
 
 export function createFaceRect(): FaceRect {
   return { l: 0, r: 0, t: 0, b: 0, s: 0, valid: false };
+}
+
+// Draws what the builder holds and frees the native path straight away. The recorded
+// picture keeps its own copy, and each detached path reports memory pressure to Hermes
+// until it's freed, so leaving hundreds a frame to the GC made collections more frequent
+// on the thread that runs the game.
+export function drawBuilt(canvas: SkCanvas, pb: SkPathBuilder, paint: SkPaint): void {
+  const path = pb.detach();
+  canvas.drawPath(path, paint);
+  path.dispose();
 }
 
 // Appends a quad to the shared path builder without drawing it, so many same-coloured
@@ -42,7 +52,7 @@ export function flushPath(
 ): void {
   res.fill.setColor(color);
   res.fill.setAlphaf(alpha);
-  canvas.drawPath(res.pb.detach(), res.fill);
+  drawBuilt(canvas, res.pb, res.fill);
 }
 
 export function fillQuad(
