@@ -10,6 +10,13 @@ A 2.5D endless runner for iOS and Android, built with Expo (SDK 57), React Nativ
     <td align="center"><img src="docs/screenshots/jungle.png" width="160" alt="Neon Jungle: the runner on a stone causeway through a bioluminescent jungle with giant trees, glowing mushrooms and carved wooden obstacles"><br><sub>Neon Jungle</sub></td>
     <td align="center"><img src="docs/screenshots/mountain.png" width="160" alt="Snowy Mountain: the runner snowboarding a night piste with cyan edges under a full moon and an aurora, past snowy pines and snowcats"><br><sub>Snowy Mountain</sub></td>
   </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/custom-runners.png" width="160" alt="Customization screen, Runners tab: Blitz equipped with cyan headphones, and a grid of the four runners Nova, Blitz, Juno and Rex"><br><sub>Runners</sub></td>
+    <td align="center"><img src="docs/screenshots/custom-outfits.png" width="160" alt="Customization screen, Outfits tab: Juno in the pink Bubblegum outfit with a red snapback, next to the Classic outfit"><br><sub>Outfits</sub></td>
+    <td align="center"><img src="docs/screenshots/custom-gear.png" width="160" alt="Customization screen, Gear tab: Rex in a red lava outfit wearing a gold crown, with Headphones and Snapback as other options"><br><sub>Gear</sub></td>
+    <td align="center"><img src="docs/screenshots/custom-trails.png" width="160" alt="Customization screen, Trails tab: Nova in the dark Midnight outfit with the Prism trail equipped, alongside Neon Stream and Afterburn"><br><sub>Trails</sub></td>
+    <td align="center"><img src="docs/screenshots/custom-boards.png" width="160" alt="Customization screen, Boards tab: Nova standing on the red Magma hoverboard, with Neon Deck, Circuit and Gold Rush boards to choose from"><br><sub>Boards</sub></td>
+  </tr>
 </table>
 
 ## Run it
