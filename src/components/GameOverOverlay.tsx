@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { ComponentProps } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
+import Animated, { Easing, FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 import { FONTS } from '../constants/fonts';
 import { UI } from '../constants/palette';
@@ -75,7 +75,9 @@ export function GameOverOverlay({ result, rewards, level, onRestart, onMenu }: P
           {result.score.toLocaleString()}
         </Text>
         {rewards?.newBestScore ? (
-          <Animated.View entering={ZoomIn.delay(250).springify()}>
+          <Animated.View
+            entering={ZoomIn.delay(250).duration(220).easing(Easing.out(Easing.cubic))}
+          >
             <View style={styles.badge}>
               <Text style={styles.badgeText}>NEW BEST!</Text>
             </View>

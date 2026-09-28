@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
+import Animated, { Easing, FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 import { FONTS } from '../constants/fonts';
 import { UI } from '../constants/palette';
@@ -47,7 +47,12 @@ export function LevelCompleteOverlay({
       <Text style={styles.cleared}>CLEARED!</Text>
       <View style={styles.stars} accessibilityLabel={`${result.stars} of 3 stars`}>
         {[1, 2, 3].map((n) => (
-          <Animated.View key={n} entering={ZoomIn.delay(200 + n * 220).springify()}>
+          <Animated.View
+            key={n}
+            entering={ZoomIn.delay(200 + n * 220)
+              .duration(220)
+              .easing(Easing.out(Easing.cubic))}
+          >
             <Ionicons
               name={n <= result.stars ? 'star' : 'star-outline'}
               size={n === 2 ? 56 : 46}

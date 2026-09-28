@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FONTS } from '../constants/fonts';
@@ -40,7 +40,7 @@ export function Panel({
         bounces={false}
       >
         <Animated.View
-          entering={ZoomIn.springify().damping(14)}
+          entering={ZoomIn.duration(220).easing(Easing.out(Easing.cubic))}
           style={[styles.card, compact && styles.cardCompact]}
         >
           <Text
