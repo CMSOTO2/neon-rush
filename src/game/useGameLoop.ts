@@ -53,19 +53,24 @@ const startWithDevPower = (state: GameState): void => {
   }
 };
 
-// Haptics for the moments that matter; everything else stays silent on the hand.
+// Haptics only for hits. expo-haptics builds and warms up a feedback generator on the main
+// thread for every call, and the game loop runs on that same thread, so each buzz costs
+// frames on a real iPhone (the simulator has no Taptic Engine and never shows it). Buzzing
+// on every landing and power-up made the run stutter; hits are rare and already a jolt.
+const HAPTIC_GAP_MS = 400;
+let lastHaptic = 0;
 const haptic = (events: number) => {
   if (Platform.OS === 'web' || !useProfileStore.getState().profile.settings.haptics) return;
+  if (!(events & (GameEvent.Crash | GameEvent.ShieldBreak | GameEvent.Stumble))) return;
+  const now = Date.now();
+  if (now - lastHaptic < HAPTIC_GAP_MS) return;
+  lastHaptic = now;
   if (events & GameEvent.Crash) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
   } else if (events & GameEvent.ShieldBreak) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
-  } else if (events & (GameEvent.Stumble | GameEvent.Smash)) {
+  } else {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-  } else if (events & GameEvent.PowerUp) {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-  } else if (events & GameEvent.Land) {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   }
 };
 

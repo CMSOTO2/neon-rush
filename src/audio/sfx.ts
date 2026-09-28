@@ -24,15 +24,25 @@ const VOLUME: Partial<Record<SfxName, number>> = { lane: 0.5, land: 0.6, coin: 0
 let players: Record<SfxName, AudioPlayer[]> | null = null;
 const cursor: Partial<Record<SfxName, number>> = {};
 let enabled = true;
+let sessionConfigured = false;
 
-export function initSfx(): void {
-  if (players) return;
-  // Respect the silent switch and let the player's own music keep playing.
+// Called before any sound or music is created. Games are expected to make noise with the
+// ring switch on silent (most phones live on silent, and the simulator has no switch, so
+// respecting it made the game sound broken on real iPhones). The in-game music and sound
+// toggles are the mute; mixing keeps the player's own music playing alongside.
+export function configureAudioSession(): void {
+  if (sessionConfigured) return;
+  sessionConfigured = true;
   setAudioModeAsync({
-    playsInSilentMode: false,
+    playsInSilentMode: true,
     interruptionMode: 'mixWithOthers',
     shouldPlayInBackground: false,
   }).catch(() => {});
+}
+
+export function initSfx(): void {
+  if (players) return;
+  configureAudioSession();
   const created = {} as Record<SfxName, AudioPlayer[]>;
   for (const name of Object.keys(SOURCES) as SfxName[]) {
     const count = POOL_SIZE[name] ?? 1;
