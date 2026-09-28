@@ -5,7 +5,7 @@ import { AppState, Platform } from 'react-native';
 import { useFrameCallback, useSharedValue, type FrameInfo } from 'react-native-reanimated';
 import { scheduleOnRN, scheduleOnUI } from 'react-native-worklets';
 
-import { initSfx, playSfx, type SfxName } from '../audio/sfx';
+import { initSfx, playSfxMany, type SfxName } from '../audio/sfx';
 import { DEV } from '../constants/dev';
 import type { LevelDef } from '../progression/campaign';
 import type { Loadout } from '../progression/cosmetics';
@@ -92,8 +92,14 @@ const SOUNDS: [number, SfxName][] = [
   [GameEvent.GameOver, 'gameover'],
 ];
 
+// Everything one frame produced goes out as a single message to the audio host.
+const frameSounds: SfxName[] = [];
 const playEventSounds = (events: number) => {
-  for (const [flag, name] of SOUNDS) if (events & flag) playSfx(name);
+  frameSounds.length = 0;
+  for (const [flag, name] of SOUNDS) {
+    if (events & flag && !frameSounds.includes(name)) frameSounds.push(name);
+  }
+  playSfxMany(frameSounds);
 };
 
 type Options = {
@@ -127,6 +133,7 @@ export function useGameLoop({
 }: Options) {
   const runtime = useSharedValue<GameRuntime | null>(null);
   const picture = useSharedValue<SkPicture>(emptyPicture);
+  const previousPicture = useSharedValue<SkPicture | null>(null);
   // Upgrade levels from the save, applied to the engine at the start of each run.
   const upgradeLevels = useSharedValue<number[]>(upgrades);
   // The next endless run teaches the controls until the tutorial has been finished once.
@@ -274,7 +281,13 @@ export function useGameLoop({
 
       const canvas = resources.recorder.beginRecording(resources.bounds);
       renderFrame(canvas, state, rt.render, resources);
-      picture.set(resources.recorder.finishRecordingAsPicture());
+      const next = resources.recorder.finishRecordingAsPicture();
+      // Free the picture from two frames ago: the canvas has drawn it and moved on, and
+      // leaving ~60 a second for the GC to find adds memory pressure on this thread.
+      const old = previousPicture.get();
+      previousPicture.set(picture.get());
+      picture.set(next);
+      if (old && old !== emptyPicture) old.dispose();
 
       if (DEV_PERF) {
         // Frame budget report: simulation vs. recording the Skia picture, in ms.
@@ -282,19 +295,23 @@ export function useGameLoop({
         p.step += t1 - t0;
         p.draw += performance.now() - t1;
         p.frames++;
-        p.worst = Math.max(p.worst, info.timeSincePreviousFrame ?? 0);
+        const gap = info.timeSincePreviousFrame ?? 0;
+        p.worst = Math.max(p.worst, gap);
+        // Averages hide hitches, so also count frames that missed a 60 Hz deadline.
+        if (gap > 20) p.slow++;
         if (p.frames >= 120) {
           console.log(
-            `[perf] step ${(p.step / p.frames).toFixed(2)}ms  draw ${(p.draw / p.frames).toFixed(2)}ms  worst frame ${p.worst.toFixed(1)}ms  distance ${Math.floor(state.distance)}m`,
+            `[perf] step ${(p.step / p.frames).toFixed(2)}ms  draw ${(p.draw / p.frames).toFixed(2)}ms  worst frame ${p.worst.toFixed(1)}ms  slow frames ${p.slow}  distance ${Math.floor(state.distance)}m`,
           );
           p.step = 0;
           p.draw = 0;
           p.frames = 0;
           p.worst = 0;
+          p.slow = 0;
         }
       }
     },
-    [runtime, picture, resources, onEvents, reduceMotionSV],
+    [runtime, picture, previousPicture, resources, onEvents, reduceMotionSV],
   );
 
   const frame = useFrameCallback(onFrame, true);

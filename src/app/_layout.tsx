@@ -7,6 +7,7 @@ import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AudioHost } from '../audio/audioHost';
 import { useMusic } from '../audio/music';
 import { WebPhoneFrame } from '../components/WebPhoneFrame';
 import { FONT_SOURCES } from '../constants/fonts';
@@ -31,6 +32,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <StatusBar hidden style="light" />
+        <AudioHost />
         <WebPhoneFrame>
           <Stack
             screenOptions={{

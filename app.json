@@ -35,7 +35,7 @@
       "favicon": "./assets/favicon.png",
       "output": "single"
     },
-    "plugins": ["expo-router", "expo-font", "expo-splash-screen", "expo-audio"],
+    "plugins": ["expo-router", "expo-font", "expo-splash-screen", "expo-audio", "expo-asset"],
     "scheme": "neonrush",
     "backgroundColor": "#12082b"
   }
