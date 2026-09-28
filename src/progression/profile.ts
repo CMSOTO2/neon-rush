@@ -36,6 +36,8 @@ export type Profile = {
   world: string;
   // Best stars (1-3) per campaign level id; missing means not finished.
   campaign: Record<string, number>;
+  // False until the first-run tutorial has been finished (or replayed from Settings).
+  tutorialDone: boolean;
 };
 
 export function defaultProfile(now: Date = new Date()): Profile {
@@ -63,6 +65,7 @@ export function defaultProfile(now: Date = new Date()): Profile {
     settings: { music: true, sfx: true, haptics: true, reduceMotion: false },
     world: 'city',
     campaign: {},
+    tutorialDone: false,
   };
 }
 
@@ -185,6 +188,8 @@ export function sanitizeProfile(raw: unknown, now: Date = new Date()): Profile {
 
   return {
     campaign,
+    // Saves from before the tutorial existed: anyone who has already run skips it.
+    tutorialDone: bool(raw.tutorialDone, life.runs > 0),
     coins: Math.floor(num(raw.coins, 0)),
     xp: Math.floor(num(raw.xp, 0)),
     upgrades,

@@ -30,6 +30,7 @@ import { createCamera } from './rendering/camera';
 import { renderFrame } from './rendering/renderFrame';
 import { createRenderResources } from './rendering/resources';
 import { activatePowerUp } from './systems/powerUpSystem';
+import { startTutorial } from './systems/tutorialSystem';
 import { GameEvent, Phase, type Action, type GameState, type RunStats } from './types';
 
 const emptyPicture = (() => {
@@ -128,6 +129,12 @@ export function useGameLoop({
   const picture = useSharedValue<SkPicture>(emptyPicture);
   // Upgrade levels from the save, applied to the engine at the start of each run.
   const upgradeLevels = useSharedValue<number[]>(upgrades);
+  // The next endless run teaches the controls until the tutorial has been finished once.
+  const tutorialDone = useProfileStore((s) => s.profile.tutorialDone);
+  const tutorialPending = useSharedValue(!tutorialDone || DEV.tutorial);
+  useEffect(() => {
+    tutorialPending.set(!tutorialDone || DEV.tutorial);
+  }, [tutorialPending, tutorialDone]);
   const reduceMotion = useProfileStore((s) => s.profile.settings.reduceMotion);
   const reduceMotionSV = useSharedValue(reduceMotion);
   useEffect(() => {
@@ -189,9 +196,10 @@ export function useGameLoop({
       'worklet';
       setUpgrades(rt.state, upgradeLevels.get());
       startRun(rt.state, newSeed());
-      startWithDevPower(rt.state);
+      if (tutorialPending.get()) startTutorial(rt.state);
+      else startWithDevPower(rt.state);
     },
-    [upgradeLevels],
+    [upgradeLevels, tutorialPending],
   );
 
   // Dev builds can start a run automatically (EXPO_PUBLIC_AUTOSTART=1) for testing
@@ -214,6 +222,7 @@ export function useGameLoop({
       playEventSounds(events);
       const store = useGameStore.getState();
       if (events & GameEvent.Start) store.setPhase('running');
+      if (events & GameEvent.TutorialDone) useProfileStore.getState().setTutorialDone(true);
       if (events & GameEvent.Revive) store.setPhase('running');
       if (events & (GameEvent.GameOver | GameEvent.LevelComplete) && stats) {
         const run = {

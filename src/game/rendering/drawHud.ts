@@ -3,7 +3,8 @@
 import type { SkCanvas } from '@shopify/react-native-skia';
 
 import { hash01 } from '../engine/random';
-import { GameMode, ParticleKind, Phase, PowerUpKind, type GameState } from '../types';
+import { TutorialMsg } from '../systems/tutorialSystem';
+import { Action, GameMode, ParticleKind, Phase, PowerUpKind, type GameState } from '../types';
 import { scaleAt, sx, sy, type Camera } from './camera';
 import { drawPowerIcon } from './drawCollectibles';
 import type { RenderResources } from './resources';
@@ -94,6 +95,93 @@ function shadowText(
   canvas.drawText(text, x, y, res.fill, font);
 }
 
+function centeredText(
+  canvas: SkCanvas,
+  res: RenderResources,
+  text: string,
+  y: number,
+  font: RenderResources['hudFont'],
+  color: RenderResources['ui']['text'],
+): void {
+  shadowText(canvas, res, text, (res.width - font.getTextWidth(text)) / 2, y, font, color);
+}
+
+// A thick chevron pointing along (dx, dy), centred on (cx, cy).
+function chevron(
+  canvas: SkCanvas,
+  res: RenderResources,
+  cx: number,
+  cy: number,
+  dx: number,
+  dy: number,
+  size: number,
+): void {
+  const pb = res.pb;
+  // Tip, then the two arms swept back from it.
+  const tx = cx + dx * size * 0.5;
+  const ty = cy + dy * size * 0.5;
+  pb.moveTo(tx - dx * size + dy * size, ty - dy * size - dx * size);
+  pb.lineTo(tx, ty);
+  pb.lineTo(tx - dx * size - dy * size, ty - dy * size + dx * size);
+  canvas.drawPath(pb.detach(), res.stroke);
+}
+
+const HINTS: Record<number, { title: string; detail: string; dx: number; dy: number }> = {
+  [Action.Jump]: { title: 'SWIPE UP', detail: 'to jump the barrier', dx: 0, dy: -1 },
+  [Action.Slide]: { title: 'SWIPE DOWN', detail: 'to slide under the laser', dx: 0, dy: 1 },
+  [Action.Right]: { title: 'SWIPE RIGHT', detail: 'to dodge the trams', dx: 1, dy: 0 },
+  [Action.Left]: { title: 'SWIPE LEFT', detail: 'to dodge the trams', dx: -1, dy: 0 },
+};
+
+// First-run tutorial: while the game is frozen, a banner with a bouncing arrow says which
+// way to swipe; after each move a short "NICE!" and finally "YOU'RE READY!".
+function drawTutorial(canvas: SkCanvas, res: RenderResources, state: GameState): void {
+  const big = res.hudFont;
+  const small = res.hudSmallFont;
+  const hint = state.tutorialHold >= 0 ? HINTS[state.tutorialHold] : undefined;
+  // Below the score and coin counter, above the runner.
+  const cy = Math.max(res.height * 0.3, res.hudTop + 215);
+  if (hint) {
+    res.fill.setColor(res.ui.shadow);
+    res.fill.setAlphaf(0.62);
+    res.rect.setXYWH(0, cy - 110, res.width, 190);
+    canvas.drawRect(res.rect, res.fill);
+
+    const bob = Math.sin(state.tutorialClock * 7) * 10;
+    res.stroke.setColor(res.ui.accent);
+    res.stroke.setAlphaf(1);
+    res.stroke.setStrokeWidth(9);
+    for (let i = 0; i < 2; i++) {
+      const offset = bob + (i - 0.5) * 22;
+      chevron(
+        canvas,
+        res,
+        res.width / 2 + hint.dx * offset,
+        cy - 44 + hint.dy * offset,
+        hint.dx,
+        hint.dy,
+        20,
+      );
+    }
+    centeredText(canvas, res, hint.title, cy + 34, big, res.ui.text);
+    centeredText(canvas, res, hint.detail, cy + 62, small, res.ui.accent);
+    return;
+  }
+  if (state.tutorialMsgTime > 0 && state.tutorialMsg !== TutorialMsg.None) {
+    const ready = state.tutorialMsg === TutorialMsg.Ready;
+    const y = cy;
+    centeredText(
+      canvas,
+      res,
+      ready ? "YOU'RE READY!" : 'NICE!',
+      y,
+      big,
+      ready ? res.ui.gold : res.ui.accent,
+    );
+    if (ready) centeredText(canvas, res, 'Go as far as you can', y + 30, small, res.ui.text);
+  }
+}
+
 // Score, distance, coins and power-up timers are drawn in Skia so they update every
 // frame without React renders.
 export function drawHud(canvas: SkCanvas, res: RenderResources, state: GameState): void {
@@ -182,4 +270,6 @@ export function drawHud(canvas: SkCanvas, res: RenderResources, state: GameState
     drawPowerIcon(canvas, res, k, x, y, r * 0.55, alpha);
     slot++;
   }
+
+  drawTutorial(canvas, res, state);
 }

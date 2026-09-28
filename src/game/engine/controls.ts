@@ -3,6 +3,7 @@
 import { applyAction } from '../systems/playerSystem';
 import { speedAt } from '../levels/difficulty';
 import { activatePowerUp } from '../systems/powerUpSystem';
+import { tutorialInput } from '../systems/tutorialSystem';
 import { GameEvent, GameMode, Phase, PowerUpKind, type Action, type GameState } from '../types';
 import { resetRun } from './state';
 
@@ -75,6 +76,10 @@ export function setPaused(state: GameState, paused: boolean): void {
 export function handleInput(state: GameState, action: Action, seed: number): void {
   if (state.phase === Phase.Ready) {
     startRun(state, seed);
+    return;
+  }
+  if (state.tutorialHold >= 0) {
+    tutorialInput(state, action);
     return;
   }
   applyAction(state, action);

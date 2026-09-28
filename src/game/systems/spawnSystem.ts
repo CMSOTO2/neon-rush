@@ -7,6 +7,7 @@ import { effectiveDistance, rowGapAt, speedAt } from '../levels/difficulty';
 import { EMPTY, generateRow, ONCOMING } from '../levels/patterns';
 import { POWERUP_WEIGHTS } from '../powerups/powerups';
 import { GameMode, ObstacleKind, type GameState } from '../types';
+import { afterTutorialRow, nextTutorialRow } from './tutorialSystem';
 
 function depthOf(kind: number): number {
   if (kind === ObstacleKind.Tram) return OBSTACLES.tram.length;
@@ -83,7 +84,8 @@ export function updateSpawner(state: GameState): void {
   while (state.nextRowZ < state.distance + WORLD.spawnAhead && state.nextRowZ < lastRowZ) {
     const z = state.nextRowZ;
     const dz = effectiveDistance(state, z);
-    generateRow(state, dz, buf);
+    const scripted = nextTutorialRow(state, buf);
+    if (!scripted) generateRow(state, dz, buf);
     for (let lane = 0; lane < LANE_COUNT; lane++) {
       if (buf[lane] !== EMPTY) acquire(state, buf[lane], lane, z);
     }
@@ -105,7 +107,9 @@ export function updateSpawner(state: GameState): void {
     state.prevSafe2 = state.prevSafe;
     state.prevSafe = state.safeLane;
     state.prevRowZ = z;
+    state.nextRowZ = scripted
+      ? afterTutorialRow(state.rowCount)
+      : state.nextRowZ + rowGapAt(dz, speedAt(dz));
     state.rowCount++;
-    state.nextRowZ += rowGapAt(dz, speedAt(dz));
   }
 }

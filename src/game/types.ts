@@ -66,6 +66,7 @@ export const GameEvent = {
   Boost: 4096,
   Revive: 8192,
   LevelComplete: 16384,
+  TutorialDone: 32768,
 } as const;
 
 export const GameMode = {
@@ -220,6 +221,15 @@ export type GameState = {
   reduceMotion: boolean;
   // 1 while the main menu is up (scene framed higher), easing to 0 once a run starts.
   menuLift: number;
+  // First-run tutorial (systems/tutorialSystem.ts). tutorialStep is the 1-based lesson
+  // being taught (0 when off); tutorialHold is the Action the game is frozen waiting for,
+  // or -1. The clock keeps running while frozen so the hint can animate.
+  tutorialStep: number;
+  tutorialHold: number;
+  tutorialClock: number;
+  // Short message after a lesson (TutorialMsg) and how long it stays up.
+  tutorialMsg: number;
+  tutorialMsgTime: number;
   // Recent runner positions (newest first) for cosmetic trails.
   trailX: number[];
   trailY: number[];

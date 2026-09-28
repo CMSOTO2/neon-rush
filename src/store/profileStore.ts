@@ -63,6 +63,7 @@ type ProfileStore = {
   setSetting: (key: keyof Settings, value: boolean) => void;
   refreshDaily: () => void;
   setWorld: (id: string) => void;
+  setTutorialDone: (done: boolean) => void;
   resetProgress: () => void;
 };
 
@@ -147,6 +148,11 @@ export const useProfileStore = create<ProfileStore>()(
         const env = ENVIRONMENTS.find((e) => e.id === id);
         if (!env || levelFromXp(p.xp).level < env.unlockLevel) return;
         set({ profile: { ...p, world: id } });
+      },
+
+      setTutorialDone: (done) => {
+        const p = get().profile;
+        if (p.tutorialDone !== done) set({ profile: { ...p, tutorialDone: done } });
       },
 
       resetProgress: () => set({ profile: defaultProfile() }),

@@ -144,6 +144,11 @@ export function createGameState(
     camX: 0,
     camLift: 0,
     menuLift: 1,
+    tutorialStep: 0,
+    tutorialHold: -1,
+    tutorialClock: 0,
+    tutorialMsg: 0,
+    tutorialMsgTime: 0,
     reduceMotion: false,
     trailX: filled(14, 0),
     trailY: filled(14, 0),
@@ -213,6 +218,10 @@ export function resetRun(state: GameState, phase: Phase, seed: number): void {
   state.crashTime = 0;
   state.revives = 0;
   state.fell = false;
+  state.tutorialStep = 0;
+  state.tutorialHold = -1;
+  state.tutorialMsg = 0;
+  state.tutorialMsgTime = 0;
   state.shake = 0;
   state.events = 0;
   state.camX = p.x;

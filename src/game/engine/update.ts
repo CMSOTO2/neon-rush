@@ -8,6 +8,7 @@ import { burstSparkles, updateParticles } from '../systems/particleSystem';
 import { updatePlayer } from '../systems/playerSystem';
 import { scoreMultiplier, updatePowerUps } from '../systems/powerUpSystem';
 import { updateSpawner } from '../systems/spawnSystem';
+import { updateTutorial } from '../systems/tutorialSystem';
 import { GameEvent, GameMode, Phase, PowerUpKind, type GameState } from '../types';
 
 function moveObstacles(state: GameState, dt: number): void {
@@ -24,6 +25,11 @@ function moveObstacles(state: GameState, dt: number): void {
 export function stepGame(state: GameState, frameDt: number): void {
   if (state.paused) return;
   const dt = Math.min(frameDt, WORLD.maxFrameDt);
+  // The tutorial freezes the whole scene on a hint until the player makes the move.
+  if (state.phase === Phase.Running) {
+    updateTutorial(state, dt);
+    if (state.tutorialHold >= 0) return;
+  }
   state.time += dt;
 
   if (state.phase === Phase.Running) {

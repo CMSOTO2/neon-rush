@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
@@ -26,6 +27,8 @@ export function SettingsScreen() {
   const settings = useProfileStore((s) => s.profile.settings);
   const setSetting = useProfileStore((s) => s.setSetting);
   const resetProgress = useProfileStore((s) => s.resetProgress);
+  const tutorialDone = useProfileStore((s) => s.profile.tutorialDone);
+  const setTutorialDone = useProfileStore((s) => s.setTutorialDone);
   const [confirmReset, setConfirmReset] = useState(false);
 
   return (
@@ -55,6 +58,27 @@ export function SettingsScreen() {
             />
           </Pressable>
         ))}
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.label}>How to play</Text>
+        <Text style={styles.detail}>
+          {tutorialDone
+            ? 'Replay the swipe lessons on your next run.'
+            : 'Your next run starts with the swipe lessons.'}
+        </Text>
+        {tutorialDone && (
+          <NeonButton
+            label="PLAY TUTORIAL"
+            variant="secondary"
+            size="small"
+            onPress={() => {
+              setTutorialDone(false);
+              if (router.canGoBack()) router.back();
+              else router.replace('/');
+            }}
+          />
+        )}
       </View>
 
       <View style={styles.card}>
