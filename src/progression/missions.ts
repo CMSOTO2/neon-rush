@@ -1,3 +1,5 @@
+import { MissionStat } from '../game/types';
+
 // Missions: three are active at a time. Each completion pays coins and XP and is replaced
 // by a new, slightly harder one, so there is always a next goal.
 
@@ -102,6 +104,28 @@ export function runValue(kind: MissionKind, run: RunSummary): number {
     case 'totalRuns':
       return 1;
   }
+}
+
+const STAT_FOR: Record<MissionKind, MissionStat | null> = {
+  coinsInRun: MissionStat.Coins,
+  totalCoins: MissionStat.Coins,
+  distanceInRun: MissionStat.Distance,
+  jumpsInRun: MissionStat.Jumps,
+  slidesInRun: MissionStat.Slides,
+  powerUpsInRun: MissionStat.PowerUps,
+  cleanDistance: MissionStat.CleanDistance,
+  scoreInRun: MissionStat.Score,
+  totalRuns: null,
+};
+
+// The run stat and value at which this mission finishes partway through the next run, so
+// the game can announce it then (game/systems/missionSystem.ts). Null for missions that
+// only resolve when a run ends. Must agree with runValue and applyRunToMissions.
+export function inRunGoal(m: Mission): { stat: MissionStat; need: number } | null {
+  const stat = STAT_FOR[m.kind];
+  if (stat === null) return null;
+  const need = templateFor(m.kind).cumulative ? m.target - m.progress : m.target;
+  return { stat, need };
 }
 
 // Small deterministic generator so mission rolls don't need stored randomness.

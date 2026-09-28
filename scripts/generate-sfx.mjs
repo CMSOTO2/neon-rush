@@ -172,6 +172,23 @@ writeWav(
   0.5,
 );
 
+// Mission complete: two bell notes a fourth apart, softer and longer than the power-up.
+{
+  const bell = (f, seconds) => {
+    const a = osc(sine, () => f);
+    const b = osc(sine, () => f * 2.76);
+    const c = osc(sine, () => f * 5.4);
+    return render(
+      seconds,
+      (t) =>
+        a(t) * env(t, 0.004, 0.32) +
+        0.35 * b(t) * env(t, 0.002, 0.12) +
+        0.12 * c(t) * env(t, 0.001, 0.05),
+    );
+  };
+  writeWav('mission', concat(bell(1568, 0.11), bell(2093, 0.75)), 0.5);
+}
+
 // Shield break: glassy shimmer over a falling tone.
 {
   const o = osc(tri, (t) => 1800 - 1200 * t * 2.5);

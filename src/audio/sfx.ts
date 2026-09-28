@@ -12,6 +12,7 @@ const SOURCES = {
   lane: require('../../assets/sfx/lane.wav'),
   land: require('../../assets/sfx/land.wav'),
   powerup: require('../../assets/sfx/powerup.wav'),
+  mission: require('../../assets/sfx/mission.wav'),
   shield: require('../../assets/sfx/shield.wav'),
   boost: require('../../assets/sfx/boost.wav'),
   crash: require('../../assets/sfx/crash.wav'),

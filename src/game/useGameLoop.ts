@@ -10,6 +10,7 @@ import { DEV } from '../constants/dev';
 import type { LevelDef } from '../progression/campaign';
 import type { Loadout } from '../progression/cosmetics';
 import { reviveCost } from '../progression/economy';
+import { inRunGoal, missionText } from '../progression/missions';
 import { useGameStore } from '../store/gameStore';
 import { useProfileStore } from '../store/profileStore';
 import {
@@ -29,6 +30,7 @@ import { useSwipeGesture } from './input/useSwipeGesture';
 import { createCamera } from './rendering/camera';
 import { renderFrame } from './rendering/renderFrame';
 import { createRenderResources } from './rendering/resources';
+import { setMissionGoals } from './systems/missionSystem';
 import { activatePowerUp } from './systems/powerUpSystem';
 import { startTutorial } from './systems/tutorialSystem';
 import { GameEvent, Phase, type Action, type GameState, type RunStats } from './types';
@@ -84,6 +86,7 @@ const SOUNDS: [number, SfxName][] = [
   [GameEvent.Land, 'land'],
   [GameEvent.Stumble, 'land'],
   [GameEvent.PowerUp, 'powerup'],
+  [GameEvent.MissionDone, 'mission'],
   [GameEvent.Revive, 'powerup'],
   [GameEvent.Boost, 'boost'],
   [GameEvent.ShieldBreak, 'shield'],
@@ -150,6 +153,31 @@ export function useGameLoop({
   useEffect(() => {
     upgradeLevels.set(upgrades);
   }, [upgradeLevels, upgrades]);
+  // The active missions' in-run goals, handed to the engine at the start of each run so
+  // it can announce a mission the moment it's done.
+  const missions = useProfileStore((s) => s.profile.missions);
+  const missionGoals = useSharedValue({
+    stats: [] as number[],
+    needs: [] as number[],
+    texts: [] as string[],
+  });
+  useEffect(() => {
+    const goals = missions.map(inRunGoal);
+    missionGoals.set({
+      stats: goals.map((g) => g?.stat ?? -1),
+      needs: goals.map((g) => g?.need ?? 0),
+      texts: missions.map(missionText),
+    });
+  }, [missionGoals, missions]);
+  const applyRunSetup = useCallback(
+    (state: GameState) => {
+      'worklet';
+      setUpgrades(state, upgradeLevels.get());
+      const goals = missionGoals.get();
+      setMissionGoals(state, goals.stats, goals.needs, goals.texts);
+    },
+    [upgradeLevels, missionGoals],
+  );
 
   const { character, outfit, accessory, trail, board } = loadout;
   const resources = useMemo(() => {
@@ -201,12 +229,12 @@ export function useGameLoop({
   const beginRun = useCallback(
     (rt: GameRuntime) => {
       'worklet';
-      setUpgrades(rt.state, upgradeLevels.get());
+      applyRunSetup(rt.state);
       startRun(rt.state, newSeed());
       if (tutorialPending.get()) startTutorial(rt.state);
       else startWithDevPower(rt.state);
     },
-    [upgradeLevels, tutorialPending],
+    [applyRunSetup, tutorialPending],
   );
 
   // Dev builds can start a run automatically (EXPO_PUBLIC_AUTOSTART=1) for testing
@@ -353,7 +381,7 @@ export function useGameLoop({
       const { seed, length, difficultyOffset, difficultyScale } = def;
       onUI((rt) => {
         'worklet';
-        setUpgrades(rt.state, upgradeLevels.get());
+        applyRunSetup(rt.state);
         startLevel(rt.state, seed, length, difficultyOffset, difficultyScale);
       });
     };
@@ -408,7 +436,7 @@ export function useGameLoop({
         useGameStore.getState().setPhase('ready');
       },
     };
-  }, [runtime, beginRun, upgradeLevels]);
+  }, [runtime, beginRun, applyRunSetup]);
 
   // Pause automatically when the app goes to the background mid-run.
   useEffect(() => {

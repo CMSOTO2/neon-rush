@@ -3,6 +3,7 @@
 import { laneX, POOL_SIZES, POWER, START_LANE, WORLD } from '../config';
 import { speedAt } from '../levels/difficulty';
 import {
+  MISSION_SLOTS,
   Phase,
   POWERUP_COUNT,
   type Coin,
@@ -150,6 +151,13 @@ export function createGameState(
     tutorialMsg: 0,
     tutorialMsgTime: 0,
     reduceMotion: false,
+    missionStat: filled(MISSION_SLOTS, -1),
+    missionNeed: filled(MISSION_SLOTS, 0),
+    missionText: ['', '', ''],
+    missionDone: filled(MISSION_SLOTS, 0),
+    missionToast: -1,
+    missionToastTime: 0,
+    missionQueue: 0,
     trailX: filled(14, 0),
     trailY: filled(14, 0),
     trailAt: 0,
@@ -222,6 +230,11 @@ export function resetRun(state: GameState, phase: Phase, seed: number): void {
   state.tutorialHold = -1;
   state.tutorialMsg = 0;
   state.tutorialMsgTime = 0;
+  // Mission goals themselves come from setMissionGoals and outlive the reset.
+  for (let i = 0; i < MISSION_SLOTS; i++) state.missionDone[i] = 0;
+  state.missionToast = -1;
+  state.missionToastTime = 0;
+  state.missionQueue = 0;
   state.shake = 0;
   state.events = 0;
   state.camX = p.x;

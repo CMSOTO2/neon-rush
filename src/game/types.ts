@@ -67,7 +67,21 @@ export const GameEvent = {
   Revive: 8192,
   LevelComplete: 16384,
   TutorialDone: 32768,
+  MissionDone: 65536,
 } as const;
+
+// Which run stat an active mission is measured by (see systems/missionSystem.ts).
+export const MissionStat = {
+  Coins: 0,
+  Distance: 1,
+  Jumps: 2,
+  Slides: 3,
+  PowerUps: 4,
+  CleanDistance: 5,
+  Score: 6,
+} as const;
+export type MissionStat = (typeof MissionStat)[keyof typeof MissionStat];
+export const MISSION_SLOTS = 3;
 
 export const GameMode = {
   Endless: 0,
@@ -230,6 +244,18 @@ export type GameState = {
   // Short message after a lesson (TutorialMsg) and how long it stays up.
   tutorialMsg: number;
   tutorialMsgTime: number;
+  // The active missions, so the HUD can say the moment one is done. Per slot: the stat it
+  // is measured by (-1 when it can't finish mid-run), the value this run needs, its text,
+  // and 1 once it has finished this run.
+  missionStat: number[];
+  missionNeed: number[];
+  missionText: string[];
+  missionDone: number[];
+  // The slot whose "Mission complete" toast is showing (-1 for none), how long it has
+  // left, and a bitmask of slots waiting their turn.
+  missionToast: number;
+  missionToastTime: number;
+  missionQueue: number;
   // Recent runner positions (newest first) for cosmetic trails.
   trailX: number[];
   trailY: number[];

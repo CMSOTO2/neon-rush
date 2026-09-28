@@ -4,6 +4,7 @@ import { POOL_SIZES, POWER, WORLD } from '../config';
 import { effectiveDistance, speedAt } from '../levels/difficulty';
 import { updateCoins } from '../systems/coinSystem';
 import { checkCollisions } from '../systems/collisionSystem';
+import { updateMissions } from '../systems/missionSystem';
 import { burstSparkles, updateParticles } from '../systems/particleSystem';
 import { updatePlayer } from '../systems/playerSystem';
 import { scoreMultiplier, updatePowerUps } from '../systems/powerUpSystem';
@@ -94,6 +95,7 @@ export function stepGame(state: GameState, frameDt: number): void {
   } else {
     updatePlayer(state, dt);
   }
+  updateMissions(state, dt);
 
   // Sample the trail every half meter so its points line up with how it's drawn.
   const tx = state.trailX;

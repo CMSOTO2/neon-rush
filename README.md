@@ -30,7 +30,7 @@ npm run format      # prettier
 - **Two modes.** _Endless_: run as far as you can while the speed and density ramp up. _Levels_: a 20-level campaign (10 in Neon City, 10 on Sunset Beach) with fixed layouts, a finish arch, and up to 3 stars per level (finish, collect 60% of the coins, no hits or continues).
 - **Obstacles.** Barriers (jump), laser gates (slide), mag-trams (change lanes), oncoming trams, and gaps in the road (jump). Hitting the side of something during a lane change bounces you back rather than ending the run.
 - **Power-ups.** Coin Magnet, Shield, Jetpack (fly over everything along a trail of sky coins), 2× Score, and Speed Boost (smash through obstacles on a hoverboard). Each is upgradeable five times; the boost upgrade doubles as a Starting Boost.
-- **Progression.** Coins, XP and player levels, three escalating missions at a time, a daily challenge with streaks, 13 achievements, and the option to continue after a crash for coins. Everything saves locally.
+- **Progression.** Coins, XP and player levels, three escalating missions at a time (a toast and chime the moment one is done; rewards pay out at the end of the run), a daily challenge with streaks, 13 achievements, and the option to continue after a crash for coins. Everything saves locally.
 - **Cosmetics** (no gameplay effect): 4 runners, alternate outfits, head gear, trails, and hoverboards, unlocked with coins, levels or achievements.
 - **Worlds.** Neon City, and Sunset Beach (unlocks at level 3).
 - **Audio.** Original synthesized sound effects and a synthwave loop (`npm run sfx`, `npm run music` regenerate them), played through Web Audio in a hidden WebView on iOS and Android, plus haptics.
@@ -76,7 +76,8 @@ src/
     config.ts          Tunables: lanes, jump, slide, obstacles, coins, power-ups
     types.ts           GameState, obstacles, coins, pickups, particles, events
     engine/            State creation/reset, frame step, controls, RNG
-    systems/           Player, spawner, collisions, coins, power-ups, particles
+    systems/           Player, spawner, collisions, coins, power-ups, particles,
+                       tutorial, missions (in-run completion toasts)
     levels/            Difficulty curve, row generator and coin patterns (fairness rules)
     powerups/          Power-up registry
     rendering/         Camera, scenery, obstacles, collectibles, runner, HUD
@@ -98,7 +99,7 @@ To find this kind of stall, averages are useless (they stayed at ~2.5 ms). Use t
 
 **Rendering is procedural 2.5D.** A pinhole camera sits behind the runner, sized from the viewport so the framing adapts to any screen. Obstacles and scenery are shaded boxes and paths, and the runner is drawn from joint positions, so there are no image assets to load. Paints, the path builder and rects are reused every frame; obstacles, coins, pickups and particles come from fixed pools. Detached paths and old frame pictures are `dispose()`d straight away rather than left for Hermes' GC, since each one reports native memory pressure. Keep paths to one convex shape per draw: Skia can't fill an anti-aliased many-contour path on the GPU and rasterizes it on the CPU (batching the road seams and lane dashes cost ~1 ms a frame that way). Measured on the iOS simulator with `EXPO_PUBLIC_PERF=1`: about 0.06 ms of simulation, 2.4 ms to record a frame, and ~2 ms of Skia raster, with no dropped frames over a 40-second run.
 
-**Adding content.** A power-up is an entry in `game/powerups/powerups.ts` plus its effect in `systems/powerUpSystem.ts`. A world is an entry in `constants/palette.ts` (and a scenery drawer if it needs new props). A cosmetic is an entry in `progression/cosmetics.ts` (characters also go in `game/characters/characters.ts`). Missions and achievements are data in `progression/`.
+**Adding content.** A power-up is an entry in `game/powerups/powerups.ts` plus its effect in `systems/powerUpSystem.ts`. A world is an entry in `constants/palette.ts` (and a scenery drawer if it needs new props). A cosmetic is an entry in `progression/cosmetics.ts` (characters also go in `game/characters/characters.ts`). Missions and achievements are data in `progression/`; a new mission kind also needs a `MissionStat` mapping in `inRunGoal` (`progression/missions.ts`) if it can finish mid-run.
 
 **The save** is versioned (`SAVE_VERSION` in `progression/profile.ts`). On load, every field is validated and repaired, so missing or out-of-range data falls back to defaults instead of crashing, and an unreadable save is copied aside rather than overwritten silently.
 

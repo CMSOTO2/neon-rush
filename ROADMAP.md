@@ -47,7 +47,7 @@ These block a TestFlight or internal-testing build.
 
 ## P1: soon after first testers
 
-8. **In-run feedback for missions.** Missions only resolve at the end of a run. A small "Mission complete!" toast the moment one finishes would feel much better. The engine would need the active mission targets passed in, and to raise an event.
+8. ~~**In-run feedback for missions.**~~ Done: the engine gets the active missions' goals at the start of each run (`inRunGoal` in `progression/missions.ts`), checks them every frame (`systems/missionSystem.ts`), and shows a "MISSION COMPLETE" pill under the score with a bell chime. Several at once queue up. Rewards still pay out at the end of the run. "Play N runs" missions can't finish mid-run, so they get no toast. Measured on the simulator: no slow frames while a toast is up.
 9. **Chaser mechanic.** After a side hit, a security drone appears behind the runner, and a second hit within a few seconds ends the run. That adds tension and makes stumbles matter (Subway Surfers does the equivalent with its guard).
 10. **More music.** One 17-second loop gets repetitive. Add a second, calmer menu track and a longer run track with variations (`scripts/generate-music.mjs`), or commission original music.
 11. **Tune the campaign.** All 20 levels are finishable by the bot, but later levels reach top speed quickly and then flatten out. Consider hand-picked rows at the start of each level, per-level obstacle themes (a "gates" level, a "gaps" level), and a boss-style final level per world.
@@ -61,12 +61,15 @@ These block a TestFlight or internal-testing build.
 
 ## P2: content and polish
 
-14. **More worlds.** Each needs an entry in `constants/palette.ts` and a scenery drawer in `rendering/drawEnvironment.ts`:
-    - Amusement Park: ferris wheels, coaster tracks, balloon stalls.
-    - Snowy Mountain: pines, cabins, falling snow particles.
-    - Space Station: modules, windows onto stars, low-gravity jumps.
-      Keep new worlds within the frame budget: Sunset Beach already records at ~3.3 ms a frame against ~2.3 ms for the city (the palms are the cost), so measure with `EXPO_PUBLIC_PERF=1` and simplify scenery if it's heavier.
-      Add ten campaign levels per world (`progression/campaign.ts`).
+14. **More worlds, each with its own way to travel.** Neon City stays exactly as it is: running down a road. Every other world swaps the road for something that fits the place, while keeping the three lanes, the swipes and the "one safe lane" generator underneath, so the fairness bot, missions and power-ups keep working:
+    - **Sunset Beach → surfing.** Replace today's beach road with a surfboard on the ocean: waves instead of the road surface, and obstacles like buoys, rocks, jet skis and sandbars (jump or change lanes), with low-hanging piers or pier beams to duck under. Coins float on the water.
+    - **Jungle → jumping.** A path that is mostly gaps: logs, stepping stones and swinging vines, so jumps and gaps become the main move and there's less lane dodging. Watch the fairness rules, since a jump-heavy generator needs its own reach checks.
+    - **Snowy Mountain → snowboarding.** A downhill slope with pines, rocks, cabins and ramps (ramps give a trick jump), falling snow, and a board carve instead of a run cycle.
+    - Still possible later: Amusement Park (coaster track), Space Station (low-gravity jumps).
+
+    How to build it: add a per-world "ride" definition next to the palette in `constants/palette.ts`: the surface drawer, the obstacle set (reuse the four kinds' collision shapes with new looks at first), the runner pose (run, surf, board) and small physics tweaks (jump height, slide length). Start with the beach as the proof, because it replaces an existing world rather than adding one. Each world also gets ten campaign levels (`progression/campaign.ts`) and its own music track (see item 10).
+    Keep new worlds within the frame budget: Sunset Beach already records at ~3.3 ms a frame against ~2.3 ms for the city (the palms are the cost). Animated water or falling snow must stay cheap, so measure with `EXPO_PUBLIC_PERF=1` and watch `slow frames`.
+
 15. **More runners and cosmetics:** two per new world, plus seasonal items. Everything is data in `progression/cosmetics.ts` and `game/characters/characters.ts`.
 16. **New power-up ideas:** super sneakers (higher jumps), a coin rush (all obstacles become coins for a few seconds), and a score-bank (keep 50% on crash). Each is an entry in `powerups/powerups.ts` plus an effect.
 17. **Moving obstacles that shift lanes,** introduced late in the difficulty curve, with the same "one safe lane" rule.

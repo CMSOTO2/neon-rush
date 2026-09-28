@@ -3,6 +3,7 @@
 import type { SkCanvas } from '@shopify/react-native-skia';
 
 import { hash01 } from '../engine/random';
+import { MISSION_TOAST } from '../systems/missionSystem';
 import { TutorialMsg } from '../systems/tutorialSystem';
 import { Action, GameMode, ParticleKind, Phase, PowerUpKind, type GameState } from '../types';
 import { scaleAt, sx, sy, type Camera } from './camera';
@@ -183,6 +184,49 @@ function drawTutorial(canvas: SkCanvas, res: RenderResources, state: GameState):
   }
 }
 
+// "MISSION COMPLETE" with the mission underneath, in a pill under the score. Centred
+// between the power-up column and the right edge so the two never overlap.
+function drawMissionToast(canvas: SkCanvas, res: RenderResources, state: GameState): void {
+  const slot = state.missionToast;
+  if (slot < 0) return;
+  const left = state.missionToastTime;
+  const shown = MISSION_TOAST.duration - left;
+  const alpha = Math.max(
+    0,
+    Math.min(1, shown / MISSION_TOAST.fadeIn, left / MISSION_TOAST.fadeOut),
+  );
+  if (alpha <= 0) return;
+
+  const small = res.hudSmallFont;
+  const r = 29;
+  const w = res.width - 2 * 76;
+  const cx = res.width / 2;
+  const cy = res.hudTop + 150;
+  res.fill.setColor(res.ui.shadow);
+  res.fill.setAlphaf(0.78 * alpha);
+  res.rect.setXYWH(cx - w / 2 + r, cy - r, w - 2 * r, r * 2);
+  canvas.drawRect(res.rect, res.fill);
+  canvas.drawCircle(cx - w / 2 + r, cy, r, res.fill);
+  canvas.drawCircle(cx + w / 2 - r, cy, r, res.fill);
+
+  const title = 'MISSION COMPLETE';
+  res.fill.setColor(res.ui.gold);
+  res.fill.setAlphaf(alpha);
+  canvas.drawText(title, cx - small.getTextWidth(title) / 2, cy - 4, res.fill, small);
+
+  // The mission text is drawn smaller, and shrunk further if it's still too wide.
+  const text = state.missionText[slot];
+  const tw = small.getTextWidth(text);
+  const k = Math.min(0.8, (w - 36) / Math.max(1, tw));
+  res.fill.setColor(res.ui.text);
+  res.fill.setAlphaf(alpha);
+  canvas.save();
+  canvas.translate(cx - (tw * k) / 2, cy + 19);
+  canvas.scale(k, k);
+  canvas.drawText(text, 0, 0, res.fill, small);
+  canvas.restore();
+}
+
 // Score, distance, coins and power-up timers are drawn in Skia so they update every
 // frame without React renders.
 export function drawHud(canvas: SkCanvas, res: RenderResources, state: GameState): void {
@@ -272,5 +316,6 @@ export function drawHud(canvas: SkCanvas, res: RenderResources, state: GameState
     slot++;
   }
 
+  drawMissionToast(canvas, res, state);
   drawTutorial(canvas, res, state);
 }
