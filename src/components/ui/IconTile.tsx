@@ -31,7 +31,13 @@ export function IconTile({ icon, label, onPress, badge }: Props) {
           </View>
         )}
       </View>
-      <Text style={styles.label} numberOfLines={1}>
+      <Text
+        style={styles.label}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+        maxFontSizeMultiplier={1.2}
+      >
         {label}
       </Text>
     </Pressable>
@@ -44,6 +50,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     paddingVertical: 10,
+    paddingHorizontal: 3,
     borderRadius: 16,
     backgroundColor: 'rgba(20, 10, 51, 0.72)',
     borderWidth: 1.5,

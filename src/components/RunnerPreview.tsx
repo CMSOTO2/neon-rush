@@ -55,6 +55,7 @@ export function RunnerPreview({
           board,
         },
         'city',
+        0,
       ),
     [width, height, font, character, outfit, accessory, trail, board],
   );

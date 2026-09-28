@@ -9,6 +9,7 @@ import { FONTS } from '../constants/fonts';
 import { getEnvironment, UI } from '../constants/palette';
 import {
   CAMPAIGN,
+  COIN_STAR_SHARE,
   isLevelUnlocked,
   LEVELS_PER_WORLD,
   type LevelDef,
@@ -17,6 +18,11 @@ import { useGameStore } from '../store/gameStore';
 import { useProfileStore } from '../store/profileStore';
 
 const WORLD_ORDER = ['city', 'beach'];
+const STAR_RULES = [
+  'Reach the finish',
+  `Grab ${Math.round(COIN_STAR_SHARE * 100)}% of the coins`,
+  'No hits, no continues',
+];
 
 export function LevelsScreen() {
   const campaign = useProfileStore((s) => s.profile.campaign);
@@ -37,9 +43,14 @@ export function LevelsScreen() {
           {totalStars} / {CAMPAIGN.length * 3} stars
         </Text>
       </View>
-      <Text style={styles.help}>
-        ★ finish · ★★ grab most of the coins · ★★★ finish without hitting anything
-      </Text>
+      <View style={styles.rules}>
+        {STAR_RULES.map((rule) => (
+          <View key={rule} style={styles.rule}>
+            <Ionicons name="star" size={12} color={UI.gold} />
+            <Text style={styles.help}>{rule}</Text>
+          </View>
+        ))}
+      </View>
 
       {WORLD_ORDER.map((worldId, w) => {
         const levels = CAMPAIGN.slice(w * LEVELS_PER_WORLD, (w + 1) * LEVELS_PER_WORLD);
@@ -99,6 +110,8 @@ export function LevelsScreen() {
 const styles = StyleSheet.create({
   summary: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   summaryText: { fontFamily: FONTS.bold, fontSize: 20, color: UI.gold },
+  rules: { gap: 3 },
+  rule: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   help: { fontFamily: FONTS.medium, fontSize: 13, color: UI.textDim },
   section: { gap: 8, marginTop: 6 },
   world: { fontFamily: FONTS.bold, fontSize: 14, color: UI.textDim, letterSpacing: 2 },

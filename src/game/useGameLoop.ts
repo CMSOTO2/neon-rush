@@ -99,6 +99,8 @@ type Options = {
   width: number;
   height: number;
   hudTop: number;
+  // Scene offset (px) behind the main menu; see components/menuLayout.ts.
+  menuShift: number;
   loadout: Loadout;
   upgrades: number[];
   world: string;
@@ -114,6 +116,7 @@ export function useGameLoop({
   width,
   height,
   hudTop,
+  menuShift,
   loadout,
   upgrades,
   world,
@@ -152,11 +155,13 @@ export function useGameLoop({
         board,
       },
       world,
+      menuShift,
     );
   }, [
     width,
     height,
     hudTop,
+    menuShift,
     hudFont,
     hudSmallFont,
     character,

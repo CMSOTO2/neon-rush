@@ -31,7 +31,7 @@ const TABS: { slot: CosmeticSlot; label: string }[] = [
 ];
 
 export function CharactersScreen() {
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const profile = useProfileStore((s) => s.profile);
   const equip = useProfileStore((s) => s.equip);
   const buy = useProfileStore((s) => s.buyCosmetic);
@@ -64,7 +64,7 @@ export function CharactersScreen() {
         {font && (
           <RunnerPreview
             width={previewW}
-            height={240}
+            height={height < 740 ? 180 : 240}
             loadout={shown}
             font={font}
             showBoard={tab === 'board'}
@@ -87,7 +87,14 @@ export function CharactersScreen() {
             }}
             style={[styles.tab, tab === t.slot && styles.tabActive]}
           >
-            <Text style={[styles.tabText, tab === t.slot && styles.tabTextActive]}>{t.label}</Text>
+            <Text
+              style={[styles.tabText, tab === t.slot && styles.tabTextActive]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              maxFontSizeMultiplier={1.2}
+            >
+              {t.label}
+            </Text>
           </Pressable>
         ))}
       </View>
@@ -172,7 +179,8 @@ const styles = StyleSheet.create({
   tabs: { flexDirection: 'row', gap: 6 },
   tab: {
     flex: 1,
-    paddingVertical: 9,
+    paddingVertical: 10,
+    paddingHorizontal: 2,
     borderRadius: 12,
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.06)',

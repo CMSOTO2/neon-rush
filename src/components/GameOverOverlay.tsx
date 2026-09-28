@@ -14,7 +14,7 @@ import { useProfileStore } from '../store/profileStore';
 import { CoinIcon } from './ui/CoinPill';
 import { LevelBadge } from './ui/LevelBadge';
 import { NeonButton } from './NeonButton';
-import { Panel } from './Panel';
+import { Panel, usePanelCompact } from './Panel';
 
 type Props = {
   result: RunResult;
@@ -55,22 +55,25 @@ function rewardLines(r: RunRewards): Line[] {
 export function GameOverOverlay({ result, rewards, level, onRestart, onMenu }: Props) {
   const xp = useProfileStore((s) => s.profile.xp);
   const best = useProfileStore((s) => s.profile.life.bestScore);
+  const compact = usePanelCompact();
   const lines = rewards ? rewardLines(rewards) : [];
-  const shown = lines.slice(0, 4);
+  const shown = lines.slice(0, compact ? 3 : 4);
 
   return (
     <Panel title={level ? `LEVEL ${level.number}` : 'CRASHED!'} titleColor={UI.accentHot}>
       {level && (
         <View style={styles.scoreBlock}>
           <Text style={styles.scoreLabel}>SO CLOSE! YOU MADE IT</Text>
-          <Text style={styles.score}>
+          <Text style={[styles.score, compact && styles.scoreCompact]} maxFontSizeMultiplier={1}>
             {Math.min(99, Math.floor((result.distance / level.length) * 100))}%
           </Text>
         </View>
       )}
       <View style={[styles.scoreBlock, level ? styles.hidden : null]}>
         <Text style={styles.scoreLabel}>SCORE</Text>
-        <Text style={styles.score}>{result.score.toLocaleString()}</Text>
+        <Text style={[styles.score, compact && styles.scoreCompact]} maxFontSizeMultiplier={1}>
+          {result.score.toLocaleString()}
+        </Text>
         {rewards?.newBestScore ? (
           <Animated.View entering={ZoomIn.delay(250).springify()}>
             <View style={styles.badge}>
@@ -136,6 +139,7 @@ const styles = StyleSheet.create({
   hidden: { display: 'none' },
   scoreLabel: { fontFamily: FONTS.semibold, fontSize: 14, color: UI.textDim, letterSpacing: 3 },
   score: { fontFamily: FONTS.bold, fontSize: 54, color: UI.text, lineHeight: 60 },
+  scoreCompact: { fontSize: 44, lineHeight: 50 },
   bestLine: { fontFamily: FONTS.medium, fontSize: 16, color: UI.textDim },
   badge: {
     backgroundColor: UI.gold,

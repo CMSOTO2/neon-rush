@@ -56,6 +56,8 @@ export type RenderResources = {
   width: number;
   height: number;
   hudTop: number;
+  // How far (px) the scene is raised behind the main menu, so the runner stands clear of it.
+  menuShift: number;
   fill: SkPaint;
   stroke: SkPaint;
   shaded: SkPaint;
@@ -211,6 +213,7 @@ export function createRenderResources(
   hudSmallFont: SkFont,
   loadout: Loadout,
   worldId: string,
+  menuShift: number,
 ): RenderResources {
   const env = getEnvironment(worldId).palette;
 
@@ -263,6 +266,7 @@ export function createRenderResources(
     width,
     height,
     hudTop,
+    menuShift,
     fill,
     stroke,
     shaded,

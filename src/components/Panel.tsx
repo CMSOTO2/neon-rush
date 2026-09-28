@@ -1,11 +1,18 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FONTS } from '../constants/fonts';
 import { UI } from '../constants/palette';
 
-// Modal card over a dimmed game view, used by pause and game-over screens.
+// Short screens (iPhone SE and friends) get a tighter card.
+export function usePanelCompact(): boolean {
+  return useWindowDimensions().height < 740;
+}
+
+// Modal card over a dimmed game view, used by pause and game-over screens. It scrolls if
+// a long list of rewards would otherwise run off a small screen.
 export function Panel({
   title,
   titleColor = UI.text,
@@ -15,28 +22,54 @@ export function Panel({
   titleColor?: string;
   children: ReactNode;
 }) {
+  const insets = useSafeAreaInsets();
+  const compact = usePanelCompact();
   return (
     <Animated.View
       entering={FadeIn.duration(180)}
       exiting={FadeOut.duration(120)}
       style={[StyleSheet.absoluteFill, styles.scrim]}
     >
-      <Animated.View entering={ZoomIn.springify().damping(14)} style={styles.card}>
-        <Text style={[styles.title, { color: titleColor, textShadowColor: titleColor }]}>
-          {title}
-        </Text>
-        <View style={styles.body}>{children}</View>
-      </Animated.View>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 },
+        ]}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        <Animated.View
+          entering={ZoomIn.springify().damping(14)}
+          style={[styles.card, compact && styles.cardCompact]}
+        >
+          <Text
+            style={[
+              styles.title,
+              compact && styles.titleCompact,
+              { color: titleColor, textShadowColor: titleColor },
+            ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            maxFontSizeMultiplier={1}
+          >
+            {title}
+          </Text>
+          <View style={[styles.body, compact && styles.bodyCompact]}>{children}</View>
+        </Animated.View>
+      </ScrollView>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  scrim: {
-    backgroundColor: 'rgba(8, 3, 24, 0.62)',
+  scrim: { backgroundColor: 'rgba(8, 3, 24, 0.62)' },
+  scroll: { flex: 1 },
+  scrollContent: {
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
   },
   card: {
     width: '100%',
@@ -64,5 +97,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginVertical: -10,
   },
+  cardCompact: { paddingVertical: 20, paddingHorizontal: 18, borderRadius: 24 },
+  titleCompact: { fontSize: 32 },
   body: { marginTop: 18, gap: 12 },
+  bodyCompact: { marginTop: 12, gap: 10 },
 });

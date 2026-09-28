@@ -25,10 +25,8 @@ const ICONS: Record<number, ComponentProps<typeof Ionicons>['name']> = {
 // The speed boost upgrade doubles as the Starting Boost: from level 1, every run begins
 // with a boost of the upgraded length.
 function describe(kind: number, level: number): string {
-  const secs = `${durationFor(kind, level).toFixed(1).replace(/\.0$/, '')}s`;
-  if (kind === PowerUpKind.Boost)
-    return level === 0 ? 'No starting boost' : `${secs} starting boost`;
-  return secs;
+  if (kind === PowerUpKind.Boost && level === 0) return 'None';
+  return `${durationFor(kind, level).toFixed(1).replace(/\.0$/, '')}s`;
 }
 
 export function ShopScreen() {
@@ -74,29 +72,35 @@ export function ShopScreen() {
 
             <View style={styles.row}>
               <View style={styles.info}>
-                <Text style={styles.durationLabel}>Now</Text>
-                <Text style={styles.duration}>{describe(p.kind, level)}</Text>
-                {!maxed && (
-                  <>
-                    <Text style={styles.durationLabel}>Next level</Text>
-                    <Text style={[styles.duration, { color: UI.accent }]}>
+                <Text style={styles.durationLabel} maxFontSizeMultiplier={1.2}>
+                  {p.kind === PowerUpKind.Boost ? 'BOOST AT START' : 'LASTS'}
+                </Text>
+                <Text style={styles.duration} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+                  {describe(p.kind, level)}
+                  {!maxed && (
+                    <Text style={styles.next}>
+                      {'  →  '}
                       {describe(p.kind, level + 1)}
                     </Text>
-                  </>
-                )}
+                  )}
+                </Text>
               </View>
               {maxed ? (
                 <Text style={styles.maxed}>MAXED</Text>
               ) : (
                 <View style={styles.buy}>
                   <View style={styles.cost}>
-                    <CoinIcon size={18} />
-                    <Text style={[styles.costText, !affordable && { color: UI.textDim }]}>
+                    <CoinIcon size={16} />
+                    <Text
+                      style={[styles.costText, !affordable && { color: UI.textDim }]}
+                      maxFontSizeMultiplier={1.2}
+                    >
                       {cost.toLocaleString()}
                     </Text>
                   </View>
                   <NeonButton
                     label="UPGRADE"
+                    size="small"
                     variant={affordable ? 'primary' : 'secondary'}
                     disabled={!affordable}
                     accessibilityHint={affordable ? undefined : 'Not enough coins yet'}
@@ -115,7 +119,7 @@ export function ShopScreen() {
 }
 
 const styles = StyleSheet.create({
-  intro: { fontFamily: FONTS.medium, fontSize: 14, color: UI.textDim },
+  intro: { fontFamily: FONTS.medium, fontSize: 14, lineHeight: 19, color: UI.textDim },
   card: {
     gap: 12,
     padding: 14,
@@ -138,8 +142,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.25)',
   },
   durationLabel: { fontFamily: FONTS.semibold, fontSize: 11, color: UI.textDim, letterSpacing: 1 },
-  duration: { fontFamily: FONTS.bold, fontSize: 15, color: UI.text },
-  buy: { alignItems: 'flex-end', gap: 6 },
+  duration: { fontFamily: FONTS.bold, fontSize: 18, color: UI.text },
+  next: { color: UI.accent },
+  buy: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   cost: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   costText: { fontFamily: FONTS.bold, fontSize: 17, color: UI.gold },
   maxed: { fontFamily: FONTS.bold, fontSize: 18, color: UI.gold, letterSpacing: 2 },

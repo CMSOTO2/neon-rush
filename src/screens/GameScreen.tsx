@@ -10,6 +10,7 @@ import { PauseButton } from '../components/PauseButton';
 import { PauseOverlay } from '../components/PauseOverlay';
 import { LevelCompleteOverlay } from '../components/LevelCompleteOverlay';
 import { MainMenu } from '../components/MainMenu';
+import { menuLayout } from '../components/menuLayout';
 import { ReviveOverlay } from '../components/ReviveOverlay';
 import { DEV } from '../constants/dev';
 import { HUD_FONT_FILE } from '../constants/fonts';
@@ -66,11 +67,13 @@ function Game({ width, height, hudFont, hudSmallFont }: GameProps) {
   const levelResult = useGameStore((s) => s.levelResult);
   // Levels play in their own world; endless uses the one picked on the menu.
   const world = DEV.world ?? level?.world ?? savedWorld;
+  const layout = menuLayout(width, height, insets);
 
   const { picture, gesture, controls } = useGameLoop({
     width,
     height,
     hudTop: insets.top,
+    menuShift: layout.shift,
     loadout,
     upgrades,
     world,
@@ -107,7 +110,7 @@ function Game({ width, height, hudFont, hudSmallFont }: GameProps) {
       </GestureDetector>
 
       {phase === 'ready' && (
-        <MainMenu top={insets.top} bottom={insets.bottom} onPlay={controls.start} />
+        <MainMenu top={insets.top} bottom={insets.bottom} layout={layout} onPlay={controls.start} />
       )}
       {phase === 'running' && <PauseButton top={insets.top + 12} onPress={controls.pause} />}
       {phase === 'paused' && (

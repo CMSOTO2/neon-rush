@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { Platform, Pressable, StyleSheet, Text, type ViewStyle } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -15,6 +15,10 @@ type Variant = 'primary' | 'secondary';
 
 type Props = {
   label: string;
+  // Small second line under the label, e.g. the next level number.
+  sublabel?: string;
+  // 'small' for buttons that sit inside cards.
+  size?: 'regular' | 'small';
   onPress: () => void;
   variant?: Variant;
   style?: ViewStyle;
@@ -35,6 +39,8 @@ const COLORS: Record<Variant, { bg: string; border: string; text: string; glow: 
 
 export function NeonButton({
   label,
+  sublabel,
+  size = 'regular',
   onPress,
   variant = 'primary',
   style,
@@ -52,7 +58,7 @@ export function NeonButton({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={sublabel ? `${label}, ${sublabel}` : label}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled }}
       disabled={disabled}
@@ -70,11 +76,32 @@ export function NeonButton({
       <Animated.View
         style={[
           styles.button,
+          size === 'small' && styles.buttonSmall,
           { backgroundColor: c.bg, borderColor: c.border, shadowColor: c.glow },
           animated,
         ]}
       >
-        <Text style={[styles.label, { color: c.text }]}>{label}</Text>
+        {/* One line that shrinks to fit rather than wrapping mid-word on narrow phones. */}
+        <Text
+          style={[styles.label, size === 'small' && styles.labelSmall, { color: c.text }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
+          maxFontSizeMultiplier={1.2}
+        >
+          {label}
+        </Text>
+        {sublabel ? (
+          <View style={styles.sub}>
+            <Text
+              style={[styles.sublabel, { color: c.text }]}
+              numberOfLines={1}
+              maxFontSizeMultiplier={1.2}
+            >
+              {sublabel}
+            </Text>
+          </View>
+        ) : null}
       </Animated.View>
     </Pressable>
   );
@@ -83,7 +110,8 @@ export function NeonButton({
 const styles = StyleSheet.create({
   button: {
     minHeight: 56,
-    paddingHorizontal: 28,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
     borderRadius: 18,
     borderWidth: 2,
     alignItems: 'center',
@@ -92,9 +120,13 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 8,
   },
+  buttonSmall: { minHeight: 44, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 14 },
   label: {
     fontFamily: FONTS.bold,
     fontSize: 22,
     letterSpacing: 1,
   },
+  labelSmall: { fontSize: 17 },
+  sub: { marginTop: -1 },
+  sublabel: { fontFamily: FONTS.semibold, fontSize: 12, letterSpacing: 1, opacity: 0.85 },
 });
