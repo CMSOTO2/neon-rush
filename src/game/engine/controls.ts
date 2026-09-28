@@ -2,6 +2,7 @@
 
 import { applyAction } from '../systems/playerSystem';
 import { speedAt } from '../levels/difficulty';
+import { clearChaser } from '../systems/chaserSystem';
 import { activatePowerUp } from '../systems/powerUpSystem';
 import { tutorialInput } from '../systems/tutorialSystem';
 import { GameEvent, GameMode, Phase, PowerUpKind, type Action, type GameState } from '../types';
@@ -61,6 +62,7 @@ export function reviveRun(state: GameState): void {
   state.invuln = 2.5;
   state.speed = speedAt(state.difficultyOffset + d * state.difficultyScale) * 0.8;
   state.stats.cleanDistance = 0;
+  clearChaser(state);
   state.events |= GameEvent.Revive;
 }
 

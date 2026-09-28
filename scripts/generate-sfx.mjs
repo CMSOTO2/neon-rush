@@ -189,6 +189,20 @@ writeWav(
   writeWav('mission', concat(bell(1568, 0.11), bell(2093, 0.75)), 0.5);
 }
 
+// Chaser drone arriving: a short two-tone siren over a rotor buzz.
+{
+  const tone = osc(
+    tri,
+    (t) => (Math.floor(t / 0.13) % 2 === 0 ? 988 : 740) * (1 + 0.01 * Math.sin(t * 60)),
+  );
+  const buzz = osc(saw, () => 92);
+  const s = render(0.56, (t) => {
+    const fade = Math.min(1, t / 0.02) * Math.min(1, (0.56 - t) / 0.12);
+    return (tone(t) * 0.8 + buzz(t) * 0.25 * (0.6 + 0.4 * Math.sin(t * 190))) * fade;
+  });
+  writeWav('siren', lowpass(s, 3200), 0.42);
+}
+
 // Shield break: glassy shimmer over a falling tone.
 {
   const o = osc(tri, (t) => 1800 - 1200 * t * 2.5);

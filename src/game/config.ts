@@ -37,6 +37,25 @@ export const OBSTACLES = {
   gap: { halfWidth: 1.05, length: 2.6, fallMargin: 0.35 },
 };
 
+// Security drone called in by a side hit. A second side hit while it's chasing ends the
+// run (a shield takes that hit instead); a boost or jetpack shakes it off.
+export const CHASER = {
+  // How long it chases after the side hit that called it.
+  duration: 5,
+  // Fly-in and fly-away animation times.
+  enterTime: 0.35,
+  leaveTime: 0.6,
+  // Hover position relative to the runner: behind, above, and off to one side.
+  // On screen this puts it above the runner's head and clear of the track ahead.
+  back: 1.8,
+  height: 3.3,
+  side: 1.1,
+  // How fast it follows the runner across lanes (exponential rate).
+  followRate: 5,
+  // The lunge when it catches the runner.
+  catchTime: 0.3,
+};
+
 export const COINS = {
   spacing: 2.1,
   radius: 0.32,

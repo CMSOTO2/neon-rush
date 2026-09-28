@@ -28,7 +28,7 @@ npm run format      # prettier
 ## What's in the game
 
 - **Two modes.** _Endless_: run as far as you can while the speed and density ramp up. _Levels_: a 20-level campaign (10 in Neon City, 10 on Sunset Beach) with fixed layouts, a finish arch, and up to 3 stars per level (finish, collect 60% of the coins, no hits or continues).
-- **Obstacles.** Barriers (jump), laser gates (slide), mag-trams (change lanes), oncoming trams, and gaps in the road (jump). Hitting the side of something during a lane change bounces you back rather than ending the run.
+- **Obstacles.** Barriers (jump), laser gates (slide), mag-trams (change lanes), oncoming trams, and gaps in the road (jump). Hitting the side of something during a lane change bounces you back rather than ending the run, but it calls in a security drone that hovers behind you for 5 seconds with a siren and searchlight. A second side hit while it's there gets you caught, unless a shield takes the hit. A boost or jetpack shakes it off.
 - **Power-ups.** Coin Magnet, Shield, Jetpack (fly over everything along a trail of sky coins), 2× Score, and Speed Boost (smash through obstacles on a hoverboard). Each is upgradeable five times; the boost upgrade doubles as a Starting Boost.
 - **Progression.** Coins, XP and player levels, three escalating missions at a time (a toast and chime the moment one is done; rewards pay out at the end of the run), a daily challenge with streaks, 13 achievements, and the option to continue after a crash for coins. Everything saves locally.
 - **Cosmetics** (no gameplay effect): 4 runners, alternate outfits, head gear, trails, and hoverboards, unlocked with coins, levels or achievements.
@@ -54,6 +54,7 @@ Dev builds only. Set them when starting Metro, e.g. `EXPO_PUBLIC_AUTOSTART=1 npx
 | `EXPO_PUBLIC_TIMESCALE=0.25` | Slow motion                                                     |
 | `EXPO_PUBLIC_PERF=1`         | Log frame timings every 2 s, including frames that missed 60 Hz |
 | `EXPO_PUBLIC_TUTORIAL=1`     | Play the first-run tutorial on every endless run                |
+| `EXPO_PUBLIC_CHASER=1`       | Keep the chaser drone called in, to inspect how it looks        |
 
 Screens can be opened directly in Expo Go with deep links, e.g. `xcrun simctl openurl booted exp://127.0.0.1:8081/--/shop`.
 
@@ -77,7 +78,7 @@ src/
     types.ts           GameState, obstacles, coins, pickups, particles, events
     engine/            State creation/reset, frame step, controls, RNG
     systems/           Player, spawner, collisions, coins, power-ups, particles,
-                       tutorial, missions (in-run completion toasts)
+                       tutorial, missions (in-run completion toasts), chaser drone
     levels/            Difficulty curve, row generator and coin patterns (fairness rules)
     powerups/          Power-up registry
     rendering/         Camera, scenery, obstacles, collectibles, runner, HUD

@@ -125,6 +125,15 @@ export const OBSTACLE_COLORS = {
   },
 };
 
+// The chaser drone: dark hull so it reads as a threat on both worlds, red eye and beam.
+export const CHASER_COLORS = {
+  body: '#1a1236',
+  trim: '#8a7dff',
+  rotor: '#c9d4ff',
+  eye: '#ff2e4f',
+  siren: '#4fc3ff',
+};
+
 export const UI = {
   text: '#ffffff',
   textDim: '#c9b8ff',

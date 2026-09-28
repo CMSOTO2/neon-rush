@@ -15,6 +15,7 @@ import {
 } from '@shopify/react-native-skia';
 
 import {
+  CHASER_COLORS,
   getEnvironment,
   OBSTACLE_COLORS,
   UI,
@@ -102,6 +103,7 @@ export type RenderResources = {
   // Power-up colours by PowerUpKind.
   power: SkColor[];
   gap: { pit: SkColor; rim: SkColor; glow: SkColor };
+  chaser: Colors<typeof CHASER_COLORS>;
   ui: { text: SkColor; shadow: SkColor; accent: SkColor; gold: SkColor; white: SkColor };
 };
 
@@ -313,6 +315,7 @@ export function createRenderResources(
     },
     power: POWERUPS.map((p) => Skia.Color(p.color)),
     gap: { pit: Skia.Color('#05010f'), rim: Skia.Color('#ff4f6d'), glow: Skia.Color('#7a1bff') },
+    chaser: toColors(CHASER_COLORS),
     ui: {
       text: Skia.Color(UI.text),
       shadow: Skia.Color(UI.shadow),

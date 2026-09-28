@@ -11,6 +11,7 @@ import { Platform } from 'react-native';
 //   perf       1: log average simulation and drawing time per frame every 2 seconds
 //   level      campaign level number to start on launch
 //   tutorial   1: play the first-run tutorial on every endless run
+//   chaser     1: keep the chaser drone called in (to inspect how it looks)
 function read(name: string, envValue: string | undefined): string | null {
   if (!__DEV__) return null;
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -32,4 +33,5 @@ export const DEV = {
   perf: read('perf', process.env.EXPO_PUBLIC_PERF) === '1',
   level: Number(read('level', process.env.EXPO_PUBLIC_LEVEL) ?? 0),
   tutorial: read('tutorial', process.env.EXPO_PUBLIC_TUTORIAL) === '1',
+  chaser: read('chaser', process.env.EXPO_PUBLIC_CHASER) === '1',
 };

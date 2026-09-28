@@ -4,7 +4,9 @@ import type { SkCanvas } from '@shopify/react-native-skia';
 
 import { POOL_SIZES, WORLD } from '../config';
 import { GameMode, ObstacleKind, type GameState } from '../types';
+import { chaserVisible } from '../systems/chaserSystem';
 import type { Camera } from './camera';
+import { chaserPose, drawChaser } from './drawChaser';
 import { drawBuildings, drawRoad, drawSkyAndGround } from './drawEnvironment';
 import { drawCoin, drawPickup } from './drawCollectibles';
 import { drawHud, drawParticles, drawSpeedLines } from './drawHud';
@@ -21,6 +23,8 @@ export type RenderScratch = {
   // PICKUP_BASE + pickup index, or PLAYER_SLOT.
   order: number[];
   keys: number[];
+  // The chaser drone's world position and alpha this frame: x, y, z, alpha.
+  chaser: number[];
 };
 
 const PLAYER_SLOT = -1;
@@ -112,6 +116,13 @@ export function renderFrame(
       drawPickup(canvas, res, cam, state, state.pickups[code - PICKUP_BASE]);
     else if (code >= COIN_BASE) drawCoin(canvas, res, cam, state, state.coins[code - COIN_BASE]);
     else drawObstacle(canvas, res, cam, scratch.face, state.obstacles[code], state.time);
+  }
+
+  // The drone flies above everything on the road, so it's drawn after all of it (sorting it
+  // by depth would let a long tram passing below cover it).
+  if (chaserVisible(state)) {
+    chaserPose(state, scratch.chaser);
+    drawChaser(canvas, res, cam, state, scratch.chaser);
   }
 
   drawParticles(canvas, res, cam, state);

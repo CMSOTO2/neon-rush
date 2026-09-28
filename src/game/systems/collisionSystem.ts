@@ -9,6 +9,7 @@ import {
   type GameState,
   type Obstacle,
 } from '../types';
+import { isChasing, loseChaser, startChase } from './chaserSystem';
 import { burstShards, burstStars } from './particleSystem';
 import { playerHeight } from './playerSystem';
 import { isInvulnerable } from './powerUpSystem';
@@ -52,15 +53,33 @@ function crash(state: GameState, fell: boolean): void {
   state.events |= GameEvent.Crash;
 }
 
-function stumble(state: GameState): void {
+// Side hit: bounce back to the lane the player came from and call the chaser drone. If it
+// is already chasing, it catches the runner, unless a shield takes the hit. Returns true
+// when the run ended.
+function stumble(state: GameState): boolean {
   const p = state.player;
-  // Bounce back to the lane the player came from.
   p.targetLane = p.prevLane;
   p.stumbleTime = PLAYER.stumbleTime;
   state.shake = Math.max(state.shake, 0.45);
   state.stats.stumbles++;
   state.stats.cleanDistance = 0;
   state.events |= GameEvent.Stumble;
+  // The tutorial forgives everything.
+  if (state.tutorialStep > 0) return false;
+  if (!isChasing(state)) {
+    startChase(state);
+    return false;
+  }
+  if (state.power[PowerUpKind.Shield] > 0) {
+    state.power[PowerUpKind.Shield] = 0;
+    state.invuln = POWER.graceTime;
+    state.events |= GameEvent.ShieldBreak;
+    loseChaser(state, true);
+    return false;
+  }
+  state.chaser.caught = true;
+  crash(state, false);
+  return true;
 }
 
 function smash(state: GameState, o: Obstacle): void {
@@ -150,7 +169,7 @@ export function checkCollisions(
       continue;
     }
     if (enteredFromSide) {
-      if (p.stumbleTime <= 0) stumble(state);
+      if (p.stumbleTime <= 0 && stumble(state)) return;
       continue;
     }
     // Still inside the obstacle's footprint while bouncing out of a side hit.

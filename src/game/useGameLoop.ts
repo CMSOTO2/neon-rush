@@ -30,6 +30,7 @@ import { useSwipeGesture } from './input/useSwipeGesture';
 import { createCamera } from './rendering/camera';
 import { renderFrame } from './rendering/renderFrame';
 import { createRenderResources } from './rendering/resources';
+import { chaserVisible, startChase } from './systems/chaserSystem';
 import { setMissionGoals } from './systems/missionSystem';
 import { activatePowerUp } from './systems/powerUpSystem';
 import { startTutorial } from './systems/tutorialSystem';
@@ -49,6 +50,7 @@ const newSeed = (): number => {
 const DEV_POWER = DEV.power;
 const DEV_PERF = DEV.perf;
 const DEV_INVINCIBLE = DEV.invincible;
+const DEV_CHASER = DEV.chaser;
 const startWithDevPower = (state: GameState): void => {
   'worklet';
   if (DEV_POWER >= 0 && DEV_POWER < 5 && state.phase === Phase.Running) {
@@ -87,6 +89,7 @@ const SOUNDS: [number, SfxName][] = [
   [GameEvent.Stumble, 'land'],
   [GameEvent.PowerUp, 'powerup'],
   [GameEvent.MissionDone, 'mission'],
+  [GameEvent.ChaserStart, 'siren'],
   [GameEvent.Revive, 'powerup'],
   [GameEvent.Boost, 'boost'],
   [GameEvent.ShieldBreak, 'shield'],
@@ -295,6 +298,9 @@ export function useGameLoop({
       state.reduceMotion = reduceMotionSV.get();
       if (DEV_INVINCIBLE && state.phase === Phase.Running) {
         state.invuln = Math.max(state.invuln, 0.2);
+      }
+      if (DEV_CHASER && state.phase === Phase.Running && !chaserVisible(state)) {
+        startChase(state);
       }
       const t0 = DEV_PERF ? performance.now() : 0;
       stepGame(state, dt);

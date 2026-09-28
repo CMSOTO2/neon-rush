@@ -2,6 +2,7 @@
 
 import { POOL_SIZES, POWER, WORLD } from '../config';
 import { effectiveDistance, speedAt } from '../levels/difficulty';
+import { updateChaser } from '../systems/chaserSystem';
 import { updateCoins } from '../systems/coinSystem';
 import { checkCollisions } from '../systems/collisionSystem';
 import { updateMissions } from '../systems/missionSystem';
@@ -60,6 +61,7 @@ export function stepGame(state: GameState, frameDt: number): void {
     if (state.phase === Phase.Running) {
       updatePowerUps(state, dt);
       updateCoins(state, dt);
+      updateChaser(state, dt);
     }
     updateSpawner(state);
     state.stats.distance = state.distance;

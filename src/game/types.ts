@@ -68,6 +68,9 @@ export const GameEvent = {
   LevelComplete: 16384,
   TutorialDone: 32768,
   MissionDone: 65536,
+  // The chaser drone arrives (siren) or is shaken off.
+  ChaserStart: 131072,
+  ChaserLost: 262144,
 } as const;
 
 // Which run stat an active mission is measured by (see systems/missionSystem.ts).
@@ -162,6 +165,22 @@ export type Particle = {
   size: number;
 };
 
+// The security drone (systems/chaserSystem.ts). Everything is in seconds except x.
+export type Chaser = {
+  // Chase time left; 0 when it isn't chasing.
+  time: number;
+  // Time since it arrived, for the fly-in.
+  age: number;
+  // Fly-away time left after the chase ends or it's shaken off.
+  leaving: number;
+  // Lateral position; it trails the runner across lanes.
+  x: number;
+  // Which side of the runner it hovers on (-1 or 1).
+  side: number;
+  // True once it has caught the runner (the crash that ended the run).
+  caught: boolean;
+};
+
 export type RunStats = {
   distance: number;
   score: number;
@@ -244,6 +263,7 @@ export type GameState = {
   // Short message after a lesson (TutorialMsg) and how long it stays up.
   tutorialMsg: number;
   tutorialMsgTime: number;
+  chaser: Chaser;
   // The active missions, so the HUD can say the moment one is done. Per slot: the stat it
   // is measured by (-1 when it can't finish mid-run), the value this run needs, its text,
   // and 1 once it has finished this run.

@@ -151,6 +151,7 @@ export function createGameState(
     tutorialMsg: 0,
     tutorialMsgTime: 0,
     reduceMotion: false,
+    chaser: { time: 0, age: 0, leaving: 0, x: 0, side: 1, caught: false },
     missionStat: filled(MISSION_SLOTS, -1),
     missionNeed: filled(MISSION_SLOTS, 0),
     missionText: ['', '', ''],
@@ -230,6 +231,11 @@ export function resetRun(state: GameState, phase: Phase, seed: number): void {
   state.tutorialHold = -1;
   state.tutorialMsg = 0;
   state.tutorialMsgTime = 0;
+  const ch = state.chaser;
+  ch.time = 0;
+  ch.age = 0;
+  ch.leaving = 0;
+  ch.caught = false;
   // Mission goals themselves come from setMissionGoals and outlive the reset.
   for (let i = 0; i < MISSION_SLOTS; i++) state.missionDone[i] = 0;
   state.missionToast = -1;

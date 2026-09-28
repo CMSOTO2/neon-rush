@@ -31,7 +31,13 @@ export function createRuntime(
   }
   return {
     state: createGameState(width, height, characterId, seed),
-    render: { cam: createCamera(width, height), face: createFaceRect(), order, keys },
+    render: {
+      cam: createCamera(width, height),
+      face: createFaceRect(),
+      order,
+      keys,
+      chaser: [0, 0, 0, 0],
+    },
     perf: { step: 0, draw: 0, frames: 0, worst: 0, slow: 0 },
   };
 }
