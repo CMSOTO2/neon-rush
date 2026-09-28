@@ -252,7 +252,52 @@ const POSE_BLEND = [
   0.06, // 5 airborne
   0.15, // 6 hoverboard
   0.09, // 7 running
+  0.1, // 8 surfing
+  0.07, // 9 surf crouch (slide on the sea)
 ];
+
+// The surfboard under the runner's feet, drawn on the water plane (or at jump height)
+// so it points down the lane in perspective, with a neon glow beneath.
+function drawSurfboard(
+  canvas: SkCanvas,
+  res: RenderResources,
+  cam: Camera,
+  state: GameState,
+): void {
+  const p = state.player;
+  const z = state.distance;
+  const y = p.y + 0.03;
+  const th = res.theme;
+  const sT = scaleAt(cam, z - 0.35);
+  const sM = scaleAt(cam, z + 0.45);
+  const sN = scaleAt(cam, z + 1.55);
+  const sP = scaleAt(cam, z + 2.05);
+  if (sT <= 0) return;
+  // Glow on the water under the board.
+  const s0 = scaleAt(cam, z + 0.3);
+  canvas.save();
+  canvas.translate(sx(cam, p.x, s0), sy(cam, 0, s0));
+  canvas.scale(1, 0.3);
+  dot(canvas, res, 0, 0, 1.0 * s0, res.env.roadEdge, 0.22 * clamp(1 - p.y * 0.25, 0.2, 1));
+  canvas.restore();
+
+  const pb = res.pb;
+  pb.moveTo(sx(cam, p.x - 0.24, sT), sy(cam, y, sT));
+  pb.lineTo(sx(cam, p.x - 0.3, sM), sy(cam, y, sM));
+  pb.lineTo(sx(cam, p.x - 0.19, sN), sy(cam, y, sN));
+  pb.lineTo(sx(cam, p.x, sP), sy(cam, y, sP));
+  pb.lineTo(sx(cam, p.x + 0.19, sN), sy(cam, y, sN));
+  pb.lineTo(sx(cam, p.x + 0.3, sM), sy(cam, y, sM));
+  pb.lineTo(sx(cam, p.x + 0.24, sT), sy(cam, y, sT));
+  pb.close();
+  res.fill.setColor(th.board);
+  res.fill.setAlphaf(1);
+  drawBuilt(canvas, pb, res.fill);
+  res.stroke.setColor(th.boardStripe);
+  res.stroke.setAlphaf(1);
+  res.stroke.setStrokeWidth(Math.max(1.5, 0.07 * sM));
+  canvas.drawLine(sx(cam, p.x, sT), sy(cam, y, sT), sx(cam, p.x, sN), sy(cam, y, sN), res.stroke);
+}
 
 // Crossfades the target pose in `pose` from the last drawn pose with an ease-out, so
 // switching between run, jump, slide and landing never snaps. Writes the result back
@@ -308,6 +353,10 @@ export function drawRunner(
   canvas.restore();
 
   drawTrail(canvas, res, cam, state);
+
+  const surf = res.env.ride === 1;
+  const crashedNow = state.phase === Phase.Crashing || state.phase === Phase.Over;
+  if (surf && !crashedNow) drawSurfboard(canvas, res, cam, state);
 
   // Pose defaults: standing.
   let hipY = 0.8;
@@ -382,6 +431,29 @@ export function drawRunner(
     lFy = 0.1;
     rFy = 0.22;
     rKy = 0.5;
+  } else if (p.sliding && surf) {
+    // Duck low on the board, arms out for balance.
+    kind = 9;
+    hipY = 0.42;
+    chestY = 0.82;
+    headY = 1.06;
+    lFx = -0.28;
+    rFx = 0.28;
+    lFy = 0;
+    rFy = 0;
+    lKx = -0.36;
+    rKx = 0.36;
+    lKy = 0.3;
+    rKy = 0.3;
+    lHx = -0.64;
+    rHx = 0.62;
+    lHy = 0.62;
+    rHy = 0.7;
+    lEx = -0.42;
+    rEx = 0.42;
+    lEy = 0.74;
+    rEy = 0.78;
+    sqX = 1.04;
   } else if (p.sliding) {
     kind = 3;
     hipY = 0.3;
@@ -454,6 +526,31 @@ export function drawRunner(
       sqY = 1.12;
       sqX = 0.92;
     }
+  } else if (surf) {
+    // Surf stance: knees bent, feet planted wide on the board, arms out, rocking gently
+    // with the swell.
+    kind = 8;
+    const swell = Math.sin(t * 2.3) * 0.035;
+    hipY = 0.7 + swell;
+    chestY = 1.17 + swell;
+    headY = 1.47 + swell;
+    lean = Math.sin(t * 1.7) * 3;
+    lFx = -0.27;
+    rFx = 0.27;
+    lFy = 0;
+    rFy = 0;
+    lKx = -0.3;
+    rKx = 0.3;
+    lKy = 0.42 + swell;
+    rKy = 0.42 + swell;
+    lHx = -0.66;
+    rHx = 0.6;
+    lHy = 1.02 + swell;
+    rHy = 1.12 + swell;
+    lEx = -0.44;
+    rEx = 0.42;
+    lEy = 1.1 + swell;
+    rEy = 1.16 + swell;
   } else if (state.power[PowerUpKind.Boost] > 0) {
     kind = 6;
     // Riding the hoverboard: knees bent, feet planted wide, arms out for balance.
@@ -578,7 +675,7 @@ export function drawRunner(
   }
 
   // Hoverboard under the feet while boosting.
-  if (state.power[PowerUpKind.Boost] > 0 && !p.flying && !crashed) {
+  if (state.power[PowerUpKind.Boost] > 0 && !p.flying && !crashed && !surf) {
     const hover = 0.1 + Math.sin(t * 9) * 0.02;
     dot(canvas, res, 0, hover, 0.75, res.board.glow, 0.18);
     limb(canvas, res, -0.62, hover + 0.12, 0.62, hover + 0.12, 0.2, res.board.deck, alpha);

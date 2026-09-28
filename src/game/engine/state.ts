@@ -155,6 +155,7 @@ export function createGameState(
     tutorialMsg: 0,
     tutorialMsgTime: 0,
     reduceMotion: false,
+    ride: 0,
     poseKind: -1,
     poseStart: 0,
     poseBlend: 0,

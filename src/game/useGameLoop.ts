@@ -298,6 +298,7 @@ export function useGameLoop({
       const dt = ((info.timeSincePreviousFrame ?? 16) / 1000) * DEV.timeScale;
       const state = rt.state;
       state.reduceMotion = reduceMotionSV.get();
+      state.ride = resources.env.ride;
       if (DEV_INVINCIBLE && state.phase === Phase.Running) {
         state.invuln = Math.max(state.invuln, 0.2);
       }

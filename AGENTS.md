@@ -62,7 +62,8 @@ A 2.5D endless runner. Start with README.md (what exists, architecture), ROADMAP
 - Draw one convex shape per path (`drawBuilt`), not many quads batched into one path: Skia rasterizes anti-aliased many-contour paths on the CPU. `drawBuilt` also disposes the path right away.
 - Level generation uses `state.rng`; cosmetic effects use `state.fxRng`. Don't mix them, or seeded runs and levels stop being reproducible.
 - The chaser drone is drawn after the depth-sorted scene (it flies above everything on the road); don't sort it by depth, or long trams passing below cover it.
-- Adding content: power-ups in `game/powerups/powerups.ts`, worlds in `constants/palette.ts` (+ a scenery drawer), cosmetics in `progression/cosmetics.ts`, levels in `progression/campaign.ts`. A new mission kind needs its run stat in `inRunGoal` (`progression/missions.ts`) so the in-run toast agrees with the end-of-run payout.
+- Worlds must stay on theme (the game is Neon Rush): dark ground, glowing edges and emissive trims, whatever the setting. Each world re-skins the same four obstacle kinds with the same hitboxes and move cues (chevrons = jump, down arrow = slide, solid vehicle = dodge), so fairness and the bot still hold.
+- Adding content: power-ups in `game/powerups/powerups.ts`, worlds in `constants/palette.ts` (+ a module in `rendering/worlds/` and a branch in `renderFrame.ts`), cosmetics in `progression/cosmetics.ts`, levels in `progression/campaign.ts`. A new mission kind needs its run stat in `inRunGoal` (`progression/missions.ts`) so the in-run toast agrees with the end-of-run payout.
 
 ### Testing without touch input
 

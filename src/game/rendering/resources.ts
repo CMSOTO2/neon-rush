@@ -74,7 +74,11 @@ export type RenderResources = {
   sun: SkShader;
   backdrop: SkPicture;
   env: {
+    // See SCENERY and RIDE below.
     scenery: number;
+    ride: number;
+    dust: SkColor;
+    spark: SkColor;
     leaves: SkColor[];
     road: SkColor;
     roadFar: SkColor;
@@ -87,6 +91,8 @@ export type RenderResources = {
     buildingSides: SkColor[];
     windows: SkColor[];
   };
+  // The world's own named colours (EnvironmentPalette.theme).
+  theme: Record<string, SkColor>;
   obstacle: {
     barrier: Colors<typeof OBSTACLE_COLORS.barrier>;
     gatePost: Colors<typeof OBSTACLE_COLORS.gatePost>;
@@ -106,6 +112,10 @@ export type RenderResources = {
   chaser: Colors<typeof CHASER_COLORS>;
   ui: { text: SkColor; shadow: SkColor; accent: SkColor; gold: SkColor; white: SkColor };
 };
+
+// Numeric codes the worklets switch on.
+export const SCENERY = { city: 0, beach: 1 } as const;
+export const RIDE = { run: 0, surf: 1 } as const;
 
 function shade(hex: string, factor: number): SkColor {
   const c = Skia.Color(hex);
@@ -248,7 +258,7 @@ export function createRenderResources(
     { x: 0, y: horizonY },
     { x: 0, y: height },
     [Skia.Color(env.groundHorizon), Skia.Color(env.ground), Skia.Color(env.groundBottom)],
-    [0, env.scenery === 'beach' ? 0.12 : 0.35, 1],
+    [0, env.scenery === 'beach' ? 0.2 : 0.35, 1],
     TileMode.Clamp,
   );
   const sunR = width * 0.26;
@@ -283,8 +293,10 @@ export function createRenderResources(
     sun,
     backdrop: recordBackdrop(width, horizonY, env, sky, sun),
     env: {
-      // 0 = city buildings, 1 = beach palms and huts.
-      scenery: env.scenery === 'beach' ? 1 : 0,
+      scenery: SCENERY[env.scenery],
+      ride: RIDE[env.ride],
+      dust: Skia.Color(env.dust),
+      spark: Skia.Color(env.spark),
       leaves: [Skia.Color('#3ddc84'), Skia.Color('#1fae6a')],
       road: Skia.Color(env.road),
       roadFar: Skia.Color(env.roadFar),
@@ -297,6 +309,7 @@ export function createRenderResources(
       buildingSides: env.buildings.map((c) => shade(c, 0.8)),
       windows: env.windows.map((c) => Skia.Color(c)),
     },
+    theme: Object.fromEntries(Object.entries(env.theme).map(([k, v]) => [k, Skia.Color(v)])),
     obstacle: {
       barrier: toColors(OBSTACLE_COLORS.barrier),
       gatePost: toColors(OBSTACLE_COLORS.gatePost),

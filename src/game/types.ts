@@ -253,6 +253,9 @@ export type GameState = {
   camLift: number;
   // Accessibility: suppress shake, speed lines and flashing effects.
   reduceMotion: boolean;
+  // How the current world is travelled (RIDE in rendering/resources.ts). Cosmetic only:
+  // it picks spray or dust effects, never anything that changes the run.
+  ride: number;
   // 1 while the main menu is up (scene framed higher), easing to 0 once a run starts.
   menuLift: number;
   // First-run tutorial (systems/tutorialSystem.ts). tutorialStep is the 1-based lesson

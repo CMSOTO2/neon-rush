@@ -3,7 +3,7 @@
 import { LANE_COUNT, LANE_WIDTH, laneX, PLAYER, POWER } from '../config';
 import { Action, GameEvent, Phase, type GameState } from '../types';
 import { fxRandom } from '../engine/random';
-import { burstDust, emitSparks } from './particleSystem';
+import { burstDust, emitSparks, emitSpray } from './particleSystem';
 
 function startJump(state: GameState): void {
   const p = state.player;
@@ -146,6 +146,10 @@ export function updatePlayer(state: GameState, dt: number): void {
       emitSparks(state, p.x, state.distance);
     }
   }
+
+  // Surfing: spray off the tail of the board.
+  if (state.ride === 1 && p.grounded && fxRandom(state) < dt * 28)
+    emitSpray(state, p.x, state.distance);
 
   // Stride rate follows run speed so feet don't skate.
   p.runPhase += dt * state.speed * 0.85;

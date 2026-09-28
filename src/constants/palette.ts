@@ -1,11 +1,21 @@
-// Environments. Each supplies a palette with the same keys plus a scenery style; the
-// renderer reads only these, so a new world (amusement park, snow, space...) is a new
-// entry in ENVIRONMENTS plus, if it needs one, a scenery drawer.
+// Environments. Each supplies a palette with the same keys plus a scenery style and a
+// ride; the renderer reads only these. Neon City is drawn by rendering/drawEnvironment.ts
+// and drawObstacles.ts; every other world has its own module in rendering/worlds/ that
+// re-skins the same obstacle kinds (same hitboxes, same move cues) to fit the place.
 
 export type Scenery = 'city' | 'beach';
 
+// How the runner travels: on foot, or standing on a surfboard.
+export type Ride = 'run' | 'surf';
+
 export type EnvironmentPalette = {
   scenery: Scenery;
+  ride: Ride;
+  // Landing dust or spray, and the particles thrown up while sliding.
+  dust: string;
+  spark: string;
+  // Extra named colours for the world's own drawers (rendering/worlds/).
+  theme: Record<string, string>;
   // Laser gate beam. Picked per world so it keeps at least 3:1 contrast against that
   // world's road and sky for normal, protan, deutan and tritan vision.
   // `arrow` is the slide hint drawn on the beam, so it must stand out against `fill`.
@@ -35,6 +45,10 @@ export type EnvironmentPalette = {
 
 export const NEON_CITY: EnvironmentPalette = {
   scenery: 'city',
+  ride: 'run',
+  dust: '#5ef2ff',
+  spark: '#ffd84a',
+  theme: {},
   gateBeam: { fill: '#ff6b9d', edge: '#ffd1e3', glow: '#ff6b9d', arrow: '#ffffff' },
   groundHorizon: '#3a1466',
   groundBottom: '#0a0418',
@@ -58,13 +72,20 @@ export const NEON_CITY: EnvironmentPalette = {
   windows: ['#5ef2ff', '#ff6ad5', '#ffd84a', '#a6ff4d'],
 };
 
+// Neon surf at dusk: a dark sea so the lights pop, a glowing current for the lane between
+// two magenta float ropes, sand, palms and lit huts on the left, and rocks, sailboats and
+// a lighthouse out to sea on the right. Every world keeps the Neon Rush look: dark
+// ground, glowing edges, emissive trims.
 export const SUNSET_BEACH: EnvironmentPalette = {
   scenery: 'beach',
-  // Pink or red would vanish against the sunset sky and sand, so the beach laser is ice.
+  ride: 'surf',
+  dust: '#9ff6ff',
+  spark: '#9ff6ff',
+  // Unused here (the beach has a pier instead of lasers) but kept for the shared shape.
   gateBeam: { fill: '#b5fbff', edge: '#ffffff', glow: '#b5fbff', arrow: '#3b1d6e' },
-  // Sea at the horizon fading into warm sand.
-  groundHorizon: '#2a7fd6',
-  groundBottom: '#b8834e',
+  // The sea picks up the sunset at the horizon and darkens toward the camera.
+  groundHorizon: '#c2508a',
+  groundBottom: '#060a2e',
   skyTop: '#2b1055',
   skyMid: '#d6457a',
   skyHorizon: '#ff9e5e',
@@ -73,17 +94,47 @@ export const SUNSET_BEACH: EnvironmentPalette = {
   sunBottom: '#ff6a3d',
   stars: '#fff4d6',
   skyline: '#5a2a6e',
-  ground: '#e8b97a',
-  groundGrid: '#fff4d6',
-  road: '#8a5a3c',
-  roadFar: '#a8704a',
-  roadSeam: '#5e3a24',
-  laneDash: '#fff4d6',
-  roadEdge: '#2ee6c5',
-  roadEdgeGlow: '#2ee6c5',
+  ground: '#12306e',
+  groundGrid: '#9ff6ff',
+  // The surf lane: a glowing current.
+  road: '#1d6fae',
+  roadFar: '#4a8fd0',
+  roadSeam: '#9ff6ff',
+  laneDash: '#5ef2ff',
+  roadEdge: '#ff4fd8',
+  roadEdgeGlow: '#ff4fd8',
   // Beach huts and their lights.
   buildings: ['#2ee6c5', '#ff6a8a', '#ffd84a', '#7b5cff'],
   windows: ['#ffd84a', '#ff9e5e', '#fff4d6'],
+  theme: {
+    sand: '#c98f6a',
+    wetSand: '#8a5a5a',
+    foam: '#9ff6ff',
+    neon: '#5ef2ff',
+    neonHot: '#ff4fd8',
+    wood: '#9a6440',
+    woodDark: '#5e3a24',
+    woodLight: '#c98e5e',
+    buoy: '#ff6a3d',
+    buoyDark: '#c9401c',
+    stripe: '#ffffff',
+    hull: '#f4f7ff',
+    hullSide: '#b9c6de',
+    hullTop: '#ffffff',
+    hullStripe: '#ff4fd8',
+    glass: '#1b3a5c',
+    light: '#fffbd0',
+    rock: '#4a3f5e',
+    rockSide: '#352c47',
+    rockTop: '#6e5f86',
+    sail: '#fff4d6',
+    whirl: '#050724',
+    whirlMid: '#1a1466',
+    lighthouse: '#ffffff',
+    lighthouseBand: '#ff4f6d',
+    board: '#ffd84a',
+    boardStripe: '#ff4f8a',
+  },
 };
 
 export type EnvironmentDef = {

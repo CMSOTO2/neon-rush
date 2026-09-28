@@ -69,6 +69,23 @@ export function emitSparks(state: GameState, x: number, z: number): void {
   );
 }
 
+// Water thrown up behind a surfboard.
+export function emitSpray(state: GameState, x: number, z: number): void {
+  const side = fxRandom(state) < 0.5 ? -1 : 1;
+  spawnParticle(
+    state,
+    ParticleKind.Dust,
+    x + side * (0.1 + fxRandom(state) * 0.2),
+    0.05,
+    z - 0.7,
+    side * (0.6 + fxRandom(state) * 1.4),
+    1.2 + fxRandom(state) * 1.8,
+    state.speed * 0.6,
+    0.3 + fxRandom(state) * 0.2,
+    0.09 + fxRandom(state) * 0.08,
+  );
+}
+
 export function burstStars(state: GameState, x: number, y: number, z: number): void {
   for (let i = 0; i < 10; i++) {
     const a = (i / 10) * Math.PI * 2;

@@ -16,7 +16,7 @@ All four build milestones from the brief are in place, plus a level campaign:
 | Progression: coins, XP levels, upgrades ×5, missions, daily + streak, 13 achievements, continue-for-coins             | Done                    |
 | Cosmetics: 4 runners, outfits, head gear, trails, hoverboards                                                         | Done                    |
 | Screens: menu, HUD, pause, continue, game over, level complete, levels, runners, upgrades, missions, awards, settings | Done                    |
-| Worlds: Neon City, Sunset Beach                                                                                       | Done                    |
+| Worlds: Neon City (running), Sunset Beach (surfing)                                                                   | Done                    |
 | Audio: generated SFX and music; haptics                                                                               | Done                    |
 | Save: versioned, validated, local only                                                                                | Done                    |
 | First-run tutorial (swipe lessons, replayable from Settings)                                                          | Done                    |
@@ -62,12 +62,12 @@ These block a TestFlight or internal-testing build.
 ## P2: content and polish
 
 14. **More worlds, each with its own way to travel.** Neon City stays exactly as it is: running down a road. Every other world swaps the road for something that fits the place, while keeping the three lanes, the swipes and the "one safe lane" generator underneath, so the fairness bot, missions and power-ups keep working:
-    - **Sunset Beach → surfing.** Replace today's beach road with a surfboard on the ocean: waves instead of the road surface, and obstacles like buoys, rocks, jet skis and sandbars (jump or change lanes), with low-hanging piers or pier beams to duck under. Coins float on the water.
+    - ~~**Sunset Beach → surfing.**~~ Done (`rendering/worlds/beach.ts`): neon surf at dusk on a glowing current between magenta float ropes, sand, palms and huts on the left, rocks, sailboats and a lighthouse on the right. Buoy boom (jump), low pier with a warning board (duck), moored and oncoming boats (dodge), whirlpools (jump). The runner rides a surfboard with a surf stance, a crouch for slides and spray off the tail. Draws in ~2.2-2.7 ms a frame on the simulator (the old beach road was ~3.3 ms) with no extra slow frames. Still possible: a splash sound for landings, a jet ski in place of the drone.
     - **Jungle → jumping.** A path that is mostly gaps: logs, stepping stones and swinging vines, so jumps and gaps become the main move and there's less lane dodging. Watch the fairness rules, since a jump-heavy generator needs its own reach checks.
     - **Snowy Mountain → snowboarding.** A downhill slope with pines, rocks, cabins and ramps (ramps give a trick jump), falling snow, and a board carve instead of a run cycle.
     - Still possible later: Amusement Park (coaster track), Space Station (low-gravity jumps).
 
-    How to build it: add a per-world "ride" definition next to the palette in `constants/palette.ts`: the surface drawer, the obstacle set (reuse the four kinds' collision shapes with new looks at first), the runner pose (run, surf, board) and small physics tweaks (jump height, slide length). Start with the beach as the proof, because it replaces an existing world rather than adding one. Each world also gets ten campaign levels (`progression/campaign.ts`) and its own music track (see item 10).
+    How it's built: each palette has a `ride` (`run`, `surf`...) and a `scenery`; each non-city world has a module in `rendering/worlds/` that re-skins the four obstacle kinds with the same hitboxes and cues. Every world keeps the Neon Rush look: dark ground, glowing edges, emissive trims. Each world also gets ten campaign levels (`progression/campaign.ts`) and its own music track (see item 10).
     Keep new worlds within the frame budget: Sunset Beach already records at ~3.3 ms a frame against ~2.3 ms for the city (the palms are the cost). Animated water or falling snow must stay cheap, so measure with `EXPO_PUBLIC_PERF=1` and watch `slow frames`.
 
 15. **More runners and cosmetics:** two per new world, plus seasonal items. Everything is data in `progression/cosmetics.ts` and `game/characters/characters.ts`.

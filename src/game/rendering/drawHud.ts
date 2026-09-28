@@ -28,9 +28,12 @@ export function drawParticles(
     let alpha = a;
     switch (pt.kind) {
       case ParticleKind.Dust:
+        color = res.env.dust;
         alpha = a * 0.5;
         break;
       case ParticleKind.Spark:
+        color = res.env.spark;
+        break;
       case ParticleKind.Star:
       case ParticleKind.Sparkle:
         color = res.ui.gold;

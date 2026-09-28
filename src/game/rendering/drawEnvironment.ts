@@ -11,16 +11,16 @@ import {
   drawBox,
   drawBuilt,
   fillQuad,
-  fillRect,
   groundQuad,
   type FaceRect,
 } from './primitives';
 import type { RenderResources } from './resources';
 
-const ROAD_HALF = (LANE_COUNT * LANE_WIDTH) / 2 + 0.35;
+export const ROAD_HALF = (LANE_COUNT * LANE_WIDTH) / 2 + 0.35;
 const BUILDING_SLOT = 11;
 
-export function drawSkyAndGround(canvas: SkCanvas, res: RenderResources, cam: Camera): void {
+// Sky picture (panned for parallax) and the ground gradient; every world starts here.
+export function drawBackdrop(canvas: SkCanvas, res: RenderResources, cam: Camera): void {
   canvas.save();
   canvas.translate(-cam.x * 5 + cam.shakeX * 0.3, cam.offsetY);
   canvas.drawPicture(res.backdrop);
@@ -32,6 +32,10 @@ export function drawSkyAndGround(canvas: SkCanvas, res: RenderResources, cam: Ca
   res.fill.setAlphaf(1);
   canvas.drawRect(res.rect, res.fill);
   res.fill.setShader(null);
+}
+
+export function drawSkyAndGround(canvas: SkCanvas, res: RenderResources, cam: Camera): void {
+  drawBackdrop(canvas, res, cam);
 
   // Receding grid on the ground outside the road.
   const stroke = res.stroke;
@@ -42,12 +46,9 @@ export function drawSkyAndGround(canvas: SkCanvas, res: RenderResources, cam: Ca
   for (let z = Math.ceil((cam.z + cam.near + 1) / spacing) * spacing; z < far; z += spacing) {
     const s = scaleAt(cam, z);
     const y = sy(cam, 0, s);
-    const gridAlpha = res.env.scenery === 1 ? 0.12 : 0.35;
-    stroke.setAlphaf(gridAlpha * distanceFade(cam, z, WORLD.drawDistance));
+    stroke.setAlphaf(0.35 * distanceFade(cam, z, WORLD.drawDistance));
     canvas.drawLine(0, y, cam.width, y, stroke);
   }
-  // The beach keeps only faint ripple lines; the city gets the full neon grid.
-  if (res.env.scenery === 1) return;
   const sNear = scaleAt(cam, cam.z + cam.near);
   const sFar = scaleAt(cam, far);
   stroke.setAlphaf(0.28);
@@ -66,116 +67,6 @@ export function drawSkyAndGround(canvas: SkCanvas, res: RenderResources, cam: Ca
   }
 }
 
-const PALM_SLOT = 9;
-const TRUNK = [0.55, 0.4, 0.31];
-const FRONDS = [0.35, 0.8, 1.3, 1.9, 2.4, 2.8, 3.1];
-
-// Beach scenery: leaning palm trees with drooping fronds, and every few slots a
-// brightly painted beach hut with a glowing lamp.
-function drawPalms(
-  canvas: SkCanvas,
-  res: RenderResources,
-  cam: Camera,
-  face: FaceRect,
-  time: number,
-): void {
-  const first = Math.floor((cam.z - 4) / PALM_SLOT);
-  const last = Math.floor((cam.z + WORLD.drawDistance) / PALM_SLOT);
-  const env = res.env;
-  for (let i = last; i >= first; i--) {
-    for (let side = -1; side <= 1; side += 2) {
-      const id = i * 2 + (side > 0 ? 1 : 0);
-      const h1 = hash01(id);
-      const h2 = hash01(id + 7919);
-      const z = i * PALM_SLOT + h2 * 3;
-      if (z <= cam.z + cam.near + 0.5) continue;
-      const alpha = distanceFade(cam, z, WORLD.drawDistance);
-      if (alpha <= 0) continue;
-      const x = side * (ROAD_HALF + 2.5 + h1 * 5);
-
-      if (hash01(id + 31) < 0.22) {
-        // Beach hut.
-        const ci = Math.floor(h2 * env.buildings.length) % env.buildings.length;
-        const x0 = side < 0 ? x - 3 : x;
-        drawBox(
-          canvas,
-          res,
-          cam,
-          face,
-          x0,
-          x0 + 3,
-          0,
-          2.4,
-          z,
-          z + 3,
-          env.buildings[ci],
-          env.buildingSides[ci],
-          res.ui.white,
-          alpha,
-        );
-        if (face.valid) {
-          const w = face.r - face.l;
-          const fh = face.b - face.t;
-          // Door and a warm lamp.
-          fillRect(
-            canvas,
-            res,
-            face.l + w * 0.38,
-            face.t + fh * 0.35,
-            face.l + w * 0.62,
-            face.b,
-            res.ui.shadow,
-            0.6 * alpha,
-          );
-          const glow = 0.7 + 0.3 * Math.sin(time * 3 + id);
-          res.fill.setColor(env.windows[0]);
-          res.fill.setAlphaf(0.35 * glow * alpha);
-          canvas.drawCircle(face.l + w * 0.2, face.t + fh * 0.3, Math.max(3, w * 0.12), res.fill);
-          res.fill.setAlphaf(glow * alpha);
-          canvas.drawCircle(face.l + w * 0.2, face.t + fh * 0.3, Math.max(1.5, w * 0.05), res.fill);
-        }
-        continue;
-      }
-
-      const s = scaleAt(cam, z);
-      const height = 5 + h2 * 3;
-      const lean = side * (0.6 + h1 * 0.9);
-      // Trunk: a gentle curve, thicker at the base.
-      let px = sx(cam, x, s);
-      let py = sy(cam, 0, s);
-      res.stroke.setColor(env.roadSeam);
-      res.stroke.setAlphaf(alpha);
-      for (let k = 1; k <= 3; k++) {
-        const t = k / 3;
-        const nx = sx(cam, x + lean * t * t, s);
-        const ny = sy(cam, height * t, s);
-        res.stroke.setStrokeWidth(Math.max(1.5, TRUNK[k - 1] * s));
-        canvas.drawLine(px, py, nx, ny, res.stroke);
-        px = nx;
-        py = ny;
-      }
-      // Fronds fanning out from the top, swaying a little.
-      const sway = Math.sin(time * 1.5 + id) * 0.08;
-      const leaf = env.leaves[hash01(id + 5) < 0.5 ? 0 : 1];
-      for (let f = 0; f < FRONDS.length; f++) {
-        const a = FRONDS[f] + sway;
-        const dx = Math.cos(a) * 2.1;
-        const dy = Math.sin(a) * 0.9 - Math.abs(Math.cos(a)) * 0.9;
-        const tipX = px + dx * s;
-        const tipY = py - dy * s * cam.heightBoost;
-        const midX = px + dx * 0.5 * s;
-        const midY = py - (dy * 0.5 + 0.35) * s * cam.heightBoost;
-        const mid2Y = py - (dy * 0.5 - 0.15) * s * cam.heightBoost;
-        fillQuad(canvas, res, px, py, midX, midY, tipX, tipY, midX, mid2Y, leaf, 0.9 * alpha);
-      }
-      res.fill.setColor(env.roadFar);
-      res.fill.setAlphaf(alpha);
-      canvas.drawCircle(px - 0.12 * s, py + 0.1 * s, Math.max(1, 0.14 * s), res.fill);
-      canvas.drawCircle(px + 0.12 * s, py + 0.12 * s, Math.max(1, 0.14 * s), res.fill);
-    }
-  }
-}
-
 // Buildings line both sides of the road. Each slot's size and colours come from a hash of
 // its index, so the city is stable while it scrolls past.
 export function drawBuildings(
@@ -185,10 +76,6 @@ export function drawBuildings(
   face: FaceRect,
   time: number,
 ): void {
-  if (res.env.scenery === 1) {
-    drawPalms(canvas, res, cam, face, time);
-    return;
-  }
   const first = Math.floor((cam.z - 4) / BUILDING_SLOT);
   const last = Math.floor((cam.z + WORLD.drawDistance) / BUILDING_SLOT);
   const env = res.env;

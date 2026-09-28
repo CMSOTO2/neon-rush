@@ -7,13 +7,20 @@ import { GameMode, ObstacleKind, type GameState } from '../types';
 import { chaserVisible } from '../systems/chaserSystem';
 import type { Camera } from './camera';
 import { chaserPose, drawChaser } from './drawChaser';
-import { drawBuildings, drawRoad, drawSkyAndGround } from './drawEnvironment';
+import { drawBackdrop, drawBuildings, drawRoad, drawSkyAndGround } from './drawEnvironment';
 import { drawCoin, drawPickup } from './drawCollectibles';
 import { drawHud, drawParticles, drawSpeedLines } from './drawHud';
 import { drawFinish, drawGaps, drawObstacle } from './drawObstacles';
 import { drawRunner } from './drawRunner';
 import type { FaceRect } from './primitives';
-import type { RenderResources } from './resources';
+import { SCENERY, type RenderResources } from './resources';
+import {
+  drawBeachGround,
+  drawBeachLane,
+  drawBeachObstacle,
+  drawBeachScenery,
+  drawWhirlpools,
+} from './worlds/beach';
 
 // Mutable per-frame scratch that lives on the UI thread next to the game state.
 export type RenderScratch = {
@@ -102,10 +109,19 @@ export function renderFrame(
   cam.shakeY = shake > 0 ? Math.cos(state.time * 71) * shake * 9 : 0;
   cam.offsetY = -state.menuLift * res.menuShift;
 
-  drawSkyAndGround(canvas, res, cam);
-  drawBuildings(canvas, res, cam, scratch.face, state.time);
-  drawRoad(canvas, res, cam);
-  drawGaps(canvas, res, cam, state);
+  const scenery = res.env.scenery;
+  if (scenery === SCENERY.beach) {
+    drawBackdrop(canvas, res, cam);
+    drawBeachGround(canvas, res, cam, state.time);
+    drawBeachScenery(canvas, res, cam, scratch.face, state.time);
+    drawBeachLane(canvas, res, cam, state.time);
+    drawWhirlpools(canvas, res, cam, state);
+  } else {
+    drawSkyAndGround(canvas, res, cam);
+    drawBuildings(canvas, res, cam, scratch.face, state.time);
+    drawRoad(canvas, res, cam);
+    drawGaps(canvas, res, cam, state);
+  }
 
   const n = sortDrawOrder(state, scratch, cam.z + WORLD.drawDistance);
   for (let i = 0; i < n; i++) {
@@ -115,6 +131,8 @@ export function renderFrame(
     else if (code >= PICKUP_BASE)
       drawPickup(canvas, res, cam, state, state.pickups[code - PICKUP_BASE]);
     else if (code >= COIN_BASE) drawCoin(canvas, res, cam, state, state.coins[code - COIN_BASE]);
+    else if (scenery === SCENERY.beach)
+      drawBeachObstacle(canvas, res, cam, scratch.face, state.obstacles[code], state.time);
     else drawObstacle(canvas, res, cam, scratch.face, state.obstacles[code], state.time);
   }
 
