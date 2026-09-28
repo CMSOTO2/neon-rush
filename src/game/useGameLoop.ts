@@ -30,6 +30,7 @@ import { useSwipeGesture } from './input/useSwipeGesture';
 import { createCamera } from './rendering/camera';
 import { renderFrame } from './rendering/renderFrame';
 import { createRenderResources } from './rendering/resources';
+import { autopilot } from './dev/autopilot';
 import { chaserVisible, startChase } from './systems/chaserSystem';
 import { setMissionGoals } from './systems/missionSystem';
 import { activatePowerUp } from './systems/powerUpSystem';
@@ -51,6 +52,7 @@ const DEV_POWER = DEV.power;
 const DEV_PERF = DEV.perf;
 const DEV_INVINCIBLE = DEV.invincible;
 const DEV_CHASER = DEV.chaser;
+const DEV_AUTOPLAY = DEV.autoplay;
 const startWithDevPower = (state: GameState): void => {
   'worklet';
   if (DEV_POWER >= 0 && DEV_POWER < 5 && state.phase === Phase.Running) {
@@ -298,6 +300,9 @@ export function useGameLoop({
       state.reduceMotion = reduceMotionSV.get();
       if (DEV_INVINCIBLE && state.phase === Phase.Running) {
         state.invuln = Math.max(state.invuln, 0.2);
+      }
+      if (DEV_AUTOPLAY && state.phase === Phase.Running && state.tutorialHold < 0) {
+        autopilot(state);
       }
       if (DEV_CHASER && state.phase === Phase.Running && !chaserVisible(state)) {
         startChase(state);

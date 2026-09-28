@@ -1,9 +1,13 @@
+'worklet';
+
 import { LANE_COUNT, PLAYER } from '../config';
 import { applyAction } from '../systems/playerSystem';
 import { Action, ObstacleKind, type GameState, type Obstacle } from '../types';
 
 // A simple perfect-information bot. It exists to prove the generator is fair: if a
 // straightforward policy survives long runs across many seeds, no row is impossible.
+// Dev builds can also let it play the real game (EXPO_PUBLIC_AUTOPLAY=1) to watch
+// jumps, slides and lane changes on a simulator without touch input.
 
 // Where a tram's near face will be when the runner reaches it, accounting for oncoming
 // trams closing the distance.
@@ -62,7 +66,7 @@ export function autopilot(state: GameState): void {
   const current = p.targetLane;
   if (!laneBlockedByTram(state, current, d - 1, d + look) || p.lane !== p.targetLane) return;
   for (let offset = 1; offset < LANE_COUNT; offset++) {
-    for (const dir of [-1, 1]) {
+    for (let dir = -1; dir <= 1; dir += 2) {
       const lane = current + dir * offset;
       if (lane < 0 || lane >= LANE_COUNT) continue;
       if (laneBlockedByTram(state, lane, d - 1, d + look)) continue;

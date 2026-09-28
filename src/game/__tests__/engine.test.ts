@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import { LANE_COUNT, laneX, OBSTACLES, POWER } from '../config';
-import { autopilot } from './autopilot';
+import { autopilot } from '../dev/autopilot';
 import { reviveRun, setUpgrades, startRun } from '../engine/controls';
 import { createGameState, resetRun } from '../engine/state';
 import { stepGame } from '../engine/update';

@@ -50,6 +50,9 @@ function makeParticle(): Particle {
   };
 }
 
+// Joint values in a runner pose (see drawRunner.ts).
+export const POSE_SIZE = 21;
+
 function filled(n: number, v: number): number[] {
   const a: number[] = [];
   for (let i = 0; i < n; i++) a.push(v);
@@ -102,6 +105,7 @@ export function createGameState(
       stumbleTime: 0,
       collectFlash: 0,
       vx: 0,
+      lean: 0,
       idleTime: 0,
     },
     obstacles,
@@ -151,6 +155,12 @@ export function createGameState(
     tutorialMsg: 0,
     tutorialMsgTime: 0,
     reduceMotion: false,
+    poseKind: -1,
+    poseStart: 0,
+    poseBlend: 0,
+    pose: filled(POSE_SIZE, 0),
+    poseFrom: filled(POSE_SIZE, 0),
+    poseTarget: filled(POSE_SIZE, 0),
     chaser: { time: 0, age: 0, leaving: 0, x: 0, side: 1, caught: false },
     missionStat: filled(MISSION_SLOTS, -1),
     missionNeed: filled(MISSION_SLOTS, 0),
@@ -178,6 +188,7 @@ export function resetRun(state: GameState, phase: Phase, seed: number): void {
   p.y = 0;
   p.vy = 0;
   p.vx = 0;
+  p.lean = 0;
   p.grounded = true;
   p.sliding = false;
   p.slideTime = 0;

@@ -241,6 +241,41 @@ function drawTrail(canvas: SkCanvas, res: RenderResources, cam: Camera, state: G
   }
 }
 
+// Pose kinds, and how long (seconds) the crossfade into each lasts. Entering a jump or a
+// slide blends fastest so the move reads the instant it's made.
+const POSE_BLEND = [
+  0.25, // 0 ready (idle on the menu)
+  0.2, // 1 level complete
+  0.08, // 2 crashed
+  0.07, // 3 slide
+  0.2, // 4 jetpack
+  0.06, // 5 airborne
+  0.15, // 6 hoverboard
+  0.09, // 7 running
+];
+
+// Crossfades the target pose in `pose` from the last drawn pose with an ease-out, so
+// switching between run, jump, slide and landing never snaps. Writes the result back
+// into `pose` and remembers it for the next frame.
+function blendPose(state: GameState, kind: number, pose: number[]): void {
+  const last = state.pose;
+  if (kind !== state.poseKind) {
+    const from = state.poseFrom;
+    for (let i = 0; i < pose.length; i++) from[i] = last[i];
+    // Nothing to blend from on the very first frame.
+    state.poseBlend = state.poseKind < 0 ? 0 : POSE_BLEND[kind];
+    state.poseKind = kind;
+    state.poseStart = state.time;
+  }
+  const u = state.poseBlend > 0 ? (state.time - state.poseStart) / state.poseBlend : 1;
+  if (u < 1) {
+    const e = 1 - (1 - u) * (1 - u);
+    const from = state.poseFrom;
+    for (let i = 0; i < pose.length; i++) pose[i] = from[i] + (pose[i] - from[i]) * e;
+  }
+  for (let i = 0; i < pose.length; i++) last[i] = pose[i];
+}
+
 export function drawRunner(
   canvas: SkCanvas,
   res: RenderResources,
@@ -301,8 +336,10 @@ export function drawRunner(
   let alpha = 1;
 
   const crashed = state.phase === Phase.Crashing || state.phase === Phase.Over;
+  let kind = 7;
 
   if (state.phase === Phase.Ready) {
+    kind = 0;
     const b = Math.sin(t * 2.4) * 0.018;
     hipY += b;
     chestY += b;
@@ -311,6 +348,7 @@ export function drawRunner(
     lHy += b;
     rHy += b;
   } else if (state.phase === Phase.Complete) {
+    kind = 1;
     // Finish-line celebration: little hops with both arms up.
     const hop = Math.abs(Math.sin(t * 7)) * 0.12;
     hipY += hop;
@@ -329,6 +367,7 @@ export function drawRunner(
     lEy = 1.55 + hop;
     rEy = 1.55 + hop;
   } else if (crashed) {
+    kind = 2;
     const k = clamp(state.crashTime * 2.6, 0, 1);
     lean = -78 * k;
     const flail = Math.sin(t * 28) * 0.12 * (1 - k * 0.6);
@@ -344,6 +383,7 @@ export function drawRunner(
     rFy = 0.22;
     rKy = 0.5;
   } else if (p.sliding) {
+    kind = 3;
     hipY = 0.3;
     chestY = 0.66;
     headY = 0.88;
@@ -367,6 +407,7 @@ export function drawRunner(
     sqX = 1.06;
     lean = -6;
   } else if (p.flying) {
+    kind = 4;
     // Jetpack: legs trailing together, arms out like wings, gentle bob.
     const bob = Math.sin(t * 5) * 0.04;
     hipY += bob;
@@ -389,6 +430,7 @@ export function drawRunner(
     lEy = 1.22 + bob;
     rEy = 1.22 + bob;
   } else if (!p.grounded) {
+    kind = 5;
     const r = clamp(p.vy / PLAYER.jumpVelocity, -1, 1);
     const tuck = clamp(0.45 + r * 0.7, 0, 1);
     lFx = -0.2;
@@ -413,6 +455,7 @@ export function drawRunner(
       sqX = 0.92;
     }
   } else if (state.power[PowerUpKind.Boost] > 0) {
+    kind = 6;
     // Riding the hoverboard: knees bent, feet planted wide, arms out for balance.
     const sway = Math.sin(t * 6) * 0.03;
     hipY = 0.68 + sway;
@@ -456,9 +499,54 @@ export function drawRunner(
     headX = sn * 0.02;
   }
 
-  // Lean into lane changes; wobble while stumbling.
+  const pose = state.poseTarget;
+  pose[0] = hipY;
+  pose[1] = chestY;
+  pose[2] = headX;
+  pose[3] = headY;
+  pose[4] = lean;
+  pose[5] = lFx;
+  pose[6] = lFy;
+  pose[7] = lKx;
+  pose[8] = lKy;
+  pose[9] = rFx;
+  pose[10] = rFy;
+  pose[11] = rKx;
+  pose[12] = rKy;
+  pose[13] = lHx;
+  pose[14] = lHy;
+  pose[15] = lEx;
+  pose[16] = lEy;
+  pose[17] = rHx;
+  pose[18] = rHy;
+  pose[19] = rEx;
+  pose[20] = rEy;
+  blendPose(state, kind, pose);
+  hipY = pose[0];
+  chestY = pose[1];
+  headX = pose[2];
+  headY = pose[3];
+  lean = pose[4];
+  lFx = pose[5];
+  lFy = pose[6];
+  lKx = pose[7];
+  lKy = pose[8];
+  rFx = pose[9];
+  rFy = pose[10];
+  rKx = pose[11];
+  rKy = pose[12];
+  lHx = pose[13];
+  lHy = pose[14];
+  lEx = pose[15];
+  lEy = pose[16];
+  rHx = pose[17];
+  rHy = pose[18];
+  rEx = pose[19];
+  rEy = pose[20];
+
+  // Lean into lane changes (eased in playerSystem); wobble while stumbling.
   if (!crashed) {
-    lean += clamp(p.vx * 2.4, -18, 18);
+    lean += p.lean;
     if (p.stumbleTime > 0) {
       lean += Math.sin(t * 45) * 10;
       alpha = state.reduceMotion ? 0.6 : Math.floor(t * 18) % 2 === 0 ? 0.45 : 1;

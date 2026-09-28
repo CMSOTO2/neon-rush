@@ -12,6 +12,7 @@ import { Platform } from 'react-native';
 //   level      campaign level number to start on launch
 //   tutorial   1: play the first-run tutorial on every endless run
 //   chaser     1: keep the chaser drone called in (to inspect how it looks)
+//   autoplay   1: the fairness bot plays the run (jumps, slides and dodges without input)
 function read(name: string, envValue: string | undefined): string | null {
   if (!__DEV__) return null;
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -34,4 +35,5 @@ export const DEV = {
   level: Number(read('level', process.env.EXPO_PUBLIC_LEVEL) ?? 0),
   tutorial: read('tutorial', process.env.EXPO_PUBLIC_TUTORIAL) === '1',
   chaser: read('chaser', process.env.EXPO_PUBLIC_CHASER) === '1',
+  autoplay: read('autoplay', process.env.EXPO_PUBLIC_AUTOPLAY) === '1',
 };

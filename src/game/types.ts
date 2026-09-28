@@ -111,8 +111,9 @@ export type PlayerState = {
   landSquash: number;
   stumbleTime: number;
   collectFlash: number;
-  // Lateral velocity, used to lean into lane changes.
+  // Lateral velocity, and the eased lean (degrees) the runner shows for it.
   vx: number;
+  lean: number;
   idleTime: number;
 };
 
@@ -276,6 +277,16 @@ export type GameState = {
   missionToast: number;
   missionToastTime: number;
   missionQueue: number;
+  // Runner pose crossfade (rendering/drawRunner.ts): the pose kind being shown, when it
+  // started and how long its blend lasts, the last drawn joints, and the joints the blend
+  // started from. Cosmetic only; collisions switch instantly.
+  poseKind: number;
+  poseStart: number;
+  poseBlend: number;
+  pose: number[];
+  poseFrom: number[];
+  // Scratch for the pose being computed this frame.
+  poseTarget: number[];
   // Recent runner positions (newest first) for cosmetic trails.
   trailX: number[];
   trailY: number[];

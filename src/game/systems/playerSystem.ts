@@ -82,6 +82,9 @@ export function updatePlayer(state: GameState, dt: number): void {
     p.lane = Math.round(p.x / LANE_WIDTH + (LANE_COUNT - 1) / 2);
   }
   p.vx = dt > 0 ? (p.x - prevX) / dt : 0;
+  // Ease the lean in and out instead of snapping to full tilt on the swipe frame.
+  const leanTarget = Math.max(-18, Math.min(18, p.vx * 2.4));
+  p.lean += (leanTarget - p.lean) * (1 - Math.exp(-PLAYER.leanRate * dt));
 
   if (state.phase === Phase.Crashing) {
     if (state.fell) {

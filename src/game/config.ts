@@ -12,6 +12,8 @@ export const PLAYER = {
   slideHeight: 0.8,
   // Exponential approach rate toward the target lane (higher = snappier).
   laneChangeRate: 22,
+  // How quickly the drawn lean follows lane changes (exponential rate).
+  leanRate: 16,
   // Jump: apex ~1.9m, ~0.62s airtime regardless of run speed.
   jumpVelocity: 12.3,
   gravity: 39.5,

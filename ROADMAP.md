@@ -73,7 +73,7 @@ These block a TestFlight or internal-testing build.
 15. **More runners and cosmetics:** two per new world, plus seasonal items. Everything is data in `progression/cosmetics.ts` and `game/characters/characters.ts`.
 16. **New power-up ideas:** super sneakers (higher jumps), a coin rush (all obstacles become coins for a few seconds), and a score-bank (keep 50% on crash). Each is an entry in `powerups/powerups.ts` plus an effect.
 17. **Moving obstacles that shift lanes,** introduced late in the difficulty curve, with the same "one safe lane" rule.
-18. **Visual polish:** a glow shader (SkSL) on neon edges instead of stacked translucent strips; a real sun bloom; screen-space rain or confetti moments; a character hit reaction at the moment of impact.
+18. **Visual polish:** (started: the runner now crossfades between run, jump, slide, landing, board, jetpack and crash poses in 60-120 ms with an ease-out, and the lane-change lean eases in and out; hitboxes still switch instantly, so controls feel no slower.) Still to do: a glow shader (SkSL) on neon edges instead of stacked translucent strips; a real sun bloom; screen-space rain or confetti moments; a character hit reaction at the moment of impact.
 19. **Localization.** The UI strings are all in components; move them into a strings table before adding languages.
 
 ## P3: release and after

@@ -55,6 +55,7 @@ Dev builds only. Set them when starting Metro, e.g. `EXPO_PUBLIC_AUTOSTART=1 npx
 | `EXPO_PUBLIC_PERF=1`         | Log frame timings every 2 s, including frames that missed 60 Hz |
 | `EXPO_PUBLIC_TUTORIAL=1`     | Play the first-run tutorial on every endless run                |
 | `EXPO_PUBLIC_CHASER=1`       | Keep the chaser drone called in, to inspect how it looks        |
+| `EXPO_PUBLIC_AUTOPLAY=1`     | The fairness bot plays the run: jumps, slides, dodges, no input |
 
 Screens can be opened directly in Expo Go with deep links, e.g. `xcrun simctl openurl booted exp://127.0.0.1:8081/--/shop`.
 
@@ -98,13 +99,13 @@ To find this kind of stall, averages are useless (they stayed at ~2.5 ms). Use t
 
 **The main menu is laid out around the runner** (`components/menuLayout.ts`): the scene is raised just enough for the runner's feet to clear the bottom buttons, and the title, world picker and cards fill the space above its head. The same numbers go to the renderer, so the layout holds from an iPhone SE to a Pro Max.
 
-**Rendering is procedural 2.5D.** A pinhole camera sits behind the runner, sized from the viewport so the framing adapts to any screen. Obstacles and scenery are shaded boxes and paths, and the runner is drawn from joint positions, so there are no image assets to load. Paints, the path builder and rects are reused every frame; obstacles, coins, pickups and particles come from fixed pools. Detached paths and old frame pictures are `dispose()`d straight away rather than left for Hermes' GC, since each one reports native memory pressure. Keep paths to one convex shape per draw: Skia can't fill an anti-aliased many-contour path on the GPU and rasterizes it on the CPU (batching the road seams and lane dashes cost ~1 ms a frame that way). Measured on the iOS simulator with `EXPO_PUBLIC_PERF=1`: about 0.06 ms of simulation, 2.4 ms to record a frame, and ~2 ms of Skia raster, with no dropped frames over a 40-second run.
+**Rendering is procedural 2.5D.** A pinhole camera sits behind the runner, sized from the viewport so the framing adapts to any screen. Obstacles and scenery are shaded boxes and paths, and the runner is drawn from joint positions, so there are no image assets to load. Pose changes (run, jump, slide, landing and so on) crossfade from the last drawn pose over 60-120 ms (`blendPose` in `rendering/drawRunner.ts`); only the drawing blends, never the hitbox. Paints, the path builder and rects are reused every frame; obstacles, coins, pickups and particles come from fixed pools. Detached paths and old frame pictures are `dispose()`d straight away rather than left for Hermes' GC, since each one reports native memory pressure. Keep paths to one convex shape per draw: Skia can't fill an anti-aliased many-contour path on the GPU and rasterizes it on the CPU (batching the road seams and lane dashes cost ~1 ms a frame that way). Measured on the iOS simulator with `EXPO_PUBLIC_PERF=1`: about 0.06 ms of simulation, 2.4 ms to record a frame, and ~2 ms of Skia raster, with no dropped frames over a 40-second run.
 
 **Adding content.** A power-up is an entry in `game/powerups/powerups.ts` plus its effect in `systems/powerUpSystem.ts`. A world is an entry in `constants/palette.ts` (and a scenery drawer if it needs new props). A cosmetic is an entry in `progression/cosmetics.ts` (characters also go in `game/characters/characters.ts`). Missions and achievements are data in `progression/`; a new mission kind also needs a `MissionStat` mapping in `inRunGoal` (`progression/missions.ts`) if it can finish mid-run.
 
 **The save** is versioned (`SAVE_VERSION` in `progression/profile.ts`). On load, every field is validated and repaired, so missing or out-of-range data falls back to defaults instead of crashing, and an unreadable save is copied aside rather than overwritten silently.
 
-**Tests.** The engine and progression rules are plain TypeScript, so `bun test` runs them headlessly, including a fairness check where an autopilot bot survives 3,000 m on 30 seeds. The same bot finishes all 20 campaign levels.
+**Tests.** The engine and progression rules are plain TypeScript, so `bun test` runs them headlessly, including a fairness check where an autopilot bot (`game/dev/autopilot.ts`) survives 3,000 m on 30 seeds. The same bot finishes all 20 campaign levels.
 
 Gotchas:
 
