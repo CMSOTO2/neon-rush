@@ -27,7 +27,9 @@ export function IconTile({ icon, label, onPress, badge }: Props) {
         <Ionicons name={icon} size={24} color={UI.accent} />
         {!!badge && (
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>{badge}</Text>
+            <Text maxFontSizeMultiplier={1.2} style={styles.badgeText}>
+              {badge}
+            </Text>
           </View>
         )}
       </View>

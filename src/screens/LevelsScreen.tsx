@@ -39,7 +39,7 @@ export function LevelsScreen() {
     <ScreenShell title="Levels">
       <View style={styles.summary}>
         <Ionicons name="star" size={20} color={UI.gold} />
-        <Text style={styles.summaryText}>
+        <Text maxFontSizeMultiplier={1.3} style={styles.summaryText}>
           {totalStars} / {CAMPAIGN.length * 3} stars
         </Text>
       </View>
@@ -47,7 +47,9 @@ export function LevelsScreen() {
         {STAR_RULES.map((rule) => (
           <View key={rule} style={styles.rule}>
             <Ionicons name="star" size={12} color={UI.gold} />
-            <Text style={styles.help}>{rule}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.help}>
+              {rule}
+            </Text>
           </View>
         ))}
       </View>
@@ -56,7 +58,9 @@ export function LevelsScreen() {
         const levels = CAMPAIGN.slice(w * LEVELS_PER_WORLD, (w + 1) * LEVELS_PER_WORLD);
         return (
           <View key={worldId} style={styles.section}>
-            <Text style={styles.world}>{getEnvironment(worldId).name.toUpperCase()}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.world}>
+              {getEnvironment(worldId).name.toUpperCase()}
+            </Text>
             <View style={styles.grid}>
               {levels.map((def) => {
                 const unlocked = isLevelUnlocked(def, campaign);
@@ -81,7 +85,9 @@ export function LevelsScreen() {
                       ]}
                     >
                       {unlocked ? (
-                        <Text style={styles.number}>{def.number}</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.number}>
+                          {def.number}
+                        </Text>
                       ) : (
                         <Ionicons name="lock-closed" size={20} color={UI.textDim} />
                       )}

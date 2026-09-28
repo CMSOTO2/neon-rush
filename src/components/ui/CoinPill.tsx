@@ -20,7 +20,9 @@ export function CoinPill({ amount }: { amount: number }) {
   return (
     <View style={styles.pill} accessibilityLabel={`${amount} coins`}>
       <CoinIcon />
-      <Text style={styles.text}>{amount.toLocaleString()}</Text>
+      <Text maxFontSizeMultiplier={1.2} style={styles.text}>
+        {amount.toLocaleString()}
+      </Text>
     </View>
   );
 }

@@ -18,7 +18,7 @@ export function AchievementsScreen() {
   return (
     <ScreenShell title="Awards">
       <View style={styles.summary}>
-        <Text style={styles.count}>
+        <Text maxFontSizeMultiplier={1.5} style={styles.count}>
           {done.length} / {ACHIEVEMENTS.length}
         </Text>
         <ProgressBar value={done.length / ACHIEVEMENTS.length} color={UI.gold} height={10} />
@@ -37,6 +37,7 @@ export function AchievementsScreen() {
             key={a.id}
             entering={FadeInDown.delay(i * 40)}
             style={[styles.card, unlocked && styles.cardDone]}
+            accessible
             accessibilityLabel={`${a.name}. ${a.description}. ${unlocked ? 'Unlocked' : 'Locked'}`}
           >
             <View style={[styles.icon, unlocked && styles.iconDone]}>
@@ -47,12 +48,21 @@ export function AchievementsScreen() {
               />
             </View>
             <View style={styles.info}>
-              <Text style={[styles.name, !unlocked && { color: UI.textDim }]}>{a.name}</Text>
-              <Text style={styles.desc}>{a.description}</Text>
+              <Text
+                maxFontSizeMultiplier={1.5}
+                style={[styles.name, !unlocked && { color: UI.textDim }]}
+              >
+                {a.name}
+              </Text>
+              <Text maxFontSizeMultiplier={1.5} style={styles.desc}>
+                {a.description}
+              </Text>
             </View>
             <View style={styles.reward}>
               <CoinIcon size={14} />
-              <Text style={styles.rewardText}>{a.reward}</Text>
+              <Text maxFontSizeMultiplier={1.5} style={styles.rewardText}>
+                {a.reward}
+              </Text>
             </View>
           </Animated.View>
         );
@@ -64,8 +74,12 @@ export function AchievementsScreen() {
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <View style={styles.stat}>
-      <Text style={styles.statValue}>{value.toLocaleString()}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <Text maxFontSizeMultiplier={1.5} style={styles.statValue}>
+        {value.toLocaleString()}
+      </Text>
+      <Text maxFontSizeMultiplier={1.5} style={styles.statLabel}>
+        {label}
+      </Text>
     </View>
   );
 }

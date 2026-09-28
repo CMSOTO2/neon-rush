@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import Animated, { Easing, FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FONTS } from '../constants/fonts';
 import { UI } from '../constants/palette';
+import { popIn, useReduceMotion } from './motion';
 
 // Short screens (iPhone SE and friends) get a tighter card.
 export function usePanelCompact(): boolean {
@@ -24,11 +25,14 @@ export function Panel({
 }) {
   const insets = useSafeAreaInsets();
   const compact = usePanelCompact();
+  const reduceMotion = useReduceMotion();
   return (
     <Animated.View
       entering={FadeIn.duration(180)}
       exiting={FadeOut.duration(120)}
       style={[StyleSheet.absoluteFill, styles.scrim]}
+      // Screen readers stay inside the panel instead of wandering onto the game behind it.
+      accessibilityViewIsModal
     >
       <ScrollView
         style={styles.scroll}
@@ -40,7 +44,7 @@ export function Panel({
         bounces={false}
       >
         <Animated.View
-          entering={ZoomIn.duration(220).easing(Easing.out(Easing.cubic))}
+          entering={popIn(reduceMotion)}
           style={[styles.card, compact && styles.cardCompact]}
         >
           <Text
@@ -52,6 +56,7 @@ export function Panel({
             numberOfLines={1}
             adjustsFontSizeToFit
             maxFontSizeMultiplier={1}
+            accessibilityRole="header"
           >
             {title}
           </Text>

@@ -36,7 +36,7 @@ export function ScreenShell({
         >
           <Ionicons name="chevron-back" size={26} color={UI.text} />
         </Pressable>
-        <Text style={styles.title} accessibilityRole="header">
+        <Text maxFontSizeMultiplier={1.3} style={styles.title} accessibilityRole="header">
           {title}
         </Text>
         <CoinPill amount={coins} />

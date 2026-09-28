@@ -34,11 +34,17 @@ export function ReviveOverlay({
 
   return (
     <Panel title="CONTINUE?" titleColor={UI.accent}>
-      <Text style={styles.count}>{left}</Text>
+      <Text maxFontSizeMultiplier={1.3} style={styles.count}>
+        {left}
+      </Text>
       <View style={styles.costRow}>
         <CoinIcon size={22} />
-        <Text style={styles.cost}>{cost.toLocaleString()}</Text>
-        <Text style={styles.balance}>of {coins.toLocaleString()}</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.cost}>
+          {cost.toLocaleString()}
+        </Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.balance}>
+          of {coins.toLocaleString()}
+        </Text>
       </View>
       <NeonButton label="KEEP RUNNING" onPress={onRevive} />
       <NeonButton label="NO THANKS" variant="secondary" onPress={onDecline} />

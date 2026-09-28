@@ -13,10 +13,14 @@ export function LevelBadge({ xp }: { xp: number }) {
       accessibilityLabel={`Level ${info.level}, ${info.xpIntoLevel} of ${info.xpForLevel} XP`}
     >
       <View style={styles.badge}>
-        <Text style={styles.level}>{info.level}</Text>
+        <Text maxFontSizeMultiplier={1.2} style={styles.level}>
+          {info.level}
+        </Text>
       </View>
       <View style={styles.bar}>
-        <Text style={styles.label}>LEVEL</Text>
+        <Text maxFontSizeMultiplier={1.2} style={styles.label}>
+          LEVEL
+        </Text>
         <ProgressBar value={info.xpIntoLevel / info.xpForLevel} color={UI.accentHot} height={7} />
       </View>
     </View>

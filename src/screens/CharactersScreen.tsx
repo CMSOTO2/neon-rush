@@ -70,8 +70,12 @@ export function CharactersScreen() {
             showBoard={tab === 'board'}
           />
         )}
-        <Text style={styles.name}>{character.name}</Text>
-        <Text style={styles.tagline}>{character.tagline}</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.name}>
+          {character.name}
+        </Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.tagline}>
+          {character.tagline}
+        </Text>
       </View>
 
       <View style={styles.tabs} accessibilityRole="tablist">
@@ -125,10 +129,14 @@ export function CharactersScreen() {
                   {!owned && <Ionicons name="lock-closed" size={18} color="#ffffff" />}
                   {equipped && <Ionicons name="checkmark" size={20} color="#ffffff" />}
                 </View>
-                <Text style={styles.itemName} numberOfLines={1}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.itemName} numberOfLines={1}>
                   {item.name}
                 </Text>
-                <Text style={[styles.itemState, owned && { color: UI.accent }]} numberOfLines={2}>
+                <Text
+                  maxFontSizeMultiplier={1.3}
+                  style={[styles.itemState, owned && { color: UI.accent }]}
+                  numberOfLines={2}
+                >
                   {equipped
                     ? 'Equipped'
                     : owned
@@ -144,7 +152,9 @@ export function CharactersScreen() {
       {preview && preview.unlock.type === 'coins' && (
         <View style={styles.buyRow}>
           <CoinIcon size={20} />
-          <Text style={styles.buyCost}>{preview.unlock.cost.toLocaleString()}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.buyCost}>
+            {preview.unlock.cost.toLocaleString()}
+          </Text>
           <View style={styles.flex} />
           <NeonButton
             label={profile.coins >= preview.unlock.cost ? 'UNLOCK' : 'NEED MORE COINS'}
@@ -179,6 +189,9 @@ const styles = StyleSheet.create({
   tabs: { flexDirection: 'row', gap: 6 },
   tab: {
     flex: 1,
+    // 44 pt: the smallest comfortable touch target.
+    minHeight: 44,
+    justifyContent: 'center',
     paddingVertical: 10,
     paddingHorizontal: 2,
     borderRadius: 12,

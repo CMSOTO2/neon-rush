@@ -6,6 +6,10 @@ export type Scenery = 'city' | 'beach';
 
 export type EnvironmentPalette = {
   scenery: Scenery;
+  // Laser gate beam. Picked per world so it keeps at least 3:1 contrast against that
+  // world's road and sky for normal, protan, deutan and tritan vision.
+  // `arrow` is the slide hint drawn on the beam, so it must stand out against `fill`.
+  gateBeam: { fill: string; edge: string; glow: string; arrow: string };
   // Ground gradient: at the horizon, just below it, and at the bottom of the screen.
   groundHorizon: string;
   groundBottom: string;
@@ -31,6 +35,7 @@ export type EnvironmentPalette = {
 
 export const NEON_CITY: EnvironmentPalette = {
   scenery: 'city',
+  gateBeam: { fill: '#ff6b9d', edge: '#ffd1e3', glow: '#ff6b9d', arrow: '#ffffff' },
   groundHorizon: '#3a1466',
   groundBottom: '#0a0418',
   skyTop: '#140a33',
@@ -55,6 +60,8 @@ export const NEON_CITY: EnvironmentPalette = {
 
 export const SUNSET_BEACH: EnvironmentPalette = {
   scenery: 'beach',
+  // Pink or red would vanish against the sunset sky and sand, so the beach laser is ice.
+  gateBeam: { fill: '#b5fbff', edge: '#ffffff', glow: '#b5fbff', arrow: '#3b1d6e' },
   // Sea at the horizon fading into warm sand.
   groundHorizon: '#2a7fd6',
   groundBottom: '#b8834e',
@@ -106,7 +113,6 @@ export const OBSTACLE_COLORS = {
     glow: '#fff6c2',
   },
   gatePost: { front: '#4b3a99', side: '#33276e', top: '#7a66d6' },
-  gateBeam: { fill: '#ff3d7f', edge: '#ffd1e3', glow: '#ff3d7f' },
   tram: {
     front: '#2ee6c5',
     side: '#18a58d',

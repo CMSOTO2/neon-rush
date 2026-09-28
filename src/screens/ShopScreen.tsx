@@ -35,7 +35,9 @@ export function ShopScreen() {
 
   return (
     <ScreenShell title="Upgrades">
-      <Text style={styles.intro}>Longer power-ups, earned with the coins you collect.</Text>
+      <Text maxFontSizeMultiplier={1.4} style={styles.intro}>
+        Longer power-ups, earned with the coins you collect.
+      </Text>
       {POWERUPS.map((p, i) => {
         const level = profile.upgrades[p.kind];
         const cost = upgradeCost(level);
@@ -53,8 +55,12 @@ export function ShopScreen() {
                 <Ionicons name={ICONS[p.kind]} size={26} color="#ffffff" />
               </View>
               <View style={styles.info}>
-                <Text style={styles.name}>{name}</Text>
-                <Text style={styles.desc}>{description}</Text>
+                <Text maxFontSizeMultiplier={1.4} style={styles.name}>
+                  {name}
+                </Text>
+                <Text maxFontSizeMultiplier={1.4} style={styles.desc}>
+                  {description}
+                </Text>
               </View>
             </View>
 
@@ -75,10 +81,10 @@ export function ShopScreen() {
                 <Text style={styles.durationLabel} maxFontSizeMultiplier={1.2}>
                   {p.kind === PowerUpKind.Boost ? 'BOOST AT START' : 'LASTS'}
                 </Text>
-                <Text style={styles.duration} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+                <Text style={styles.duration} maxFontSizeMultiplier={1.2}>
                   {describe(p.kind, level)}
                   {!maxed && (
-                    <Text style={styles.next}>
+                    <Text maxFontSizeMultiplier={1.2} style={styles.next}>
                       {'  →  '}
                       {describe(p.kind, level + 1)}
                     </Text>
@@ -86,7 +92,9 @@ export function ShopScreen() {
                 </Text>
               </View>
               {maxed ? (
-                <Text style={styles.maxed}>MAXED</Text>
+                <Text maxFontSizeMultiplier={1.4} style={styles.maxed}>
+                  MAXED
+                </Text>
               ) : (
                 <View style={styles.buy}>
                   <View style={styles.cost}>

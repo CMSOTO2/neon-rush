@@ -89,7 +89,7 @@ export type RenderResources = {
   obstacle: {
     barrier: Colors<typeof OBSTACLE_COLORS.barrier>;
     gatePost: Colors<typeof OBSTACLE_COLORS.gatePost>;
-    gateBeam: Colors<typeof OBSTACLE_COLORS.gateBeam>;
+    gateBeam: Colors<EnvironmentPalette['gateBeam']>;
     tram: Colors<typeof OBSTACLE_COLORS.tram>;
   };
   character: Colors<CharacterColors> & { head: number };
@@ -298,7 +298,7 @@ export function createRenderResources(
     obstacle: {
       barrier: toColors(OBSTACLE_COLORS.barrier),
       gatePost: toColors(OBSTACLE_COLORS.gatePost),
-      gateBeam: toColors(OBSTACLE_COLORS.gateBeam),
+      gateBeam: toColors(env.gateBeam),
       tram: toColors(OBSTACLE_COLORS.tram),
     },
     character: { ...toColors(look.colors), head: look.head },

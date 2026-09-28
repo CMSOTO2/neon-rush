@@ -32,20 +32,24 @@ export function WorldPicker() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Previous world"
-            hitSlop={10}
+            hitSlop={12}
             onPress={() => step(-1)}
           >
             <Ionicons name="chevron-back" size={22} color={UI.text} />
           </Pressable>
         )}
-        <Text style={styles.name} accessibilityLabel={`World: ${current.name}`}>
+        <Text
+          maxFontSizeMultiplier={1.3}
+          style={styles.name}
+          accessibilityLabel={`World: ${current.name}`}
+        >
           {current.name}
         </Text>
         {canCycle && (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Next world"
-            hitSlop={10}
+            hitSlop={12}
             onPress={() => step(1)}
           >
             <Ionicons name="chevron-forward" size={22} color={UI.text} />
@@ -55,7 +59,7 @@ export function WorldPicker() {
       {nextLocked && (
         <View style={styles.lock}>
           <Ionicons name="lock-closed" size={11} color={UI.gold} />
-          <Text style={styles.lockText}>
+          <Text maxFontSizeMultiplier={1.3} style={styles.lockText}>
             {nextLocked.name} unlocks at level {nextLocked.unlockLevel}
           </Text>
         </View>

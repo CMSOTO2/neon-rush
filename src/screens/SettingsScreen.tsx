@@ -44,8 +44,12 @@ export function SettingsScreen() {
             style={[styles.row, i > 0 && styles.divider]}
           >
             <View style={styles.info}>
-              <Text style={styles.label}>{t.label}</Text>
-              <Text style={styles.detail}>{t.detail}</Text>
+              <Text maxFontSizeMultiplier={1.5} style={styles.label}>
+                {t.label}
+              </Text>
+              <Text maxFontSizeMultiplier={1.5} style={styles.detail}>
+                {t.detail}
+              </Text>
             </View>
             <Switch
               value={settings[t.key]}
@@ -61,8 +65,10 @@ export function SettingsScreen() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.label}>How to play</Text>
-        <Text style={styles.detail}>
+        <Text maxFontSizeMultiplier={1.5} style={styles.label}>
+          How to play
+        </Text>
+        <Text maxFontSizeMultiplier={1.5} style={styles.detail}>
           {tutorialDone
             ? 'Replay the swipe lessons on your next run.'
             : 'Your next run starts with the swipe lessons.'}
@@ -82,8 +88,10 @@ export function SettingsScreen() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.label}>Reset progress</Text>
-        <Text style={styles.detail}>
+        <Text maxFontSizeMultiplier={1.5} style={styles.label}>
+          Reset progress
+        </Text>
+        <Text maxFontSizeMultiplier={1.5} style={styles.detail}>
           Deletes coins, upgrades, unlocks, missions and records on this device. This can’t be
           undone.
         </Text>
@@ -109,8 +117,10 @@ export function SettingsScreen() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.label}>About</Text>
-        <Text style={styles.detail}>
+        <Text maxFontSizeMultiplier={1.5} style={styles.label}>
+          About
+        </Text>
+        <Text maxFontSizeMultiplier={1.5} style={styles.detail}>
           Neon Rush {Constants.expoConfig?.version ?? ''}. Plays fully offline; progress is saved on
           this device. Font: Fredoka (SIL Open Font License). Sounds and artwork are original to
           this game.

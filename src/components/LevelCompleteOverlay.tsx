@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { Easing, FadeInDown, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { FONTS } from '../constants/fonts';
 import { UI } from '../constants/palette';
@@ -8,6 +8,7 @@ import type { RunRewards } from '../progression/applyRun';
 import type { LevelDef } from '../progression/campaign';
 import type { LevelResult, RunResult } from '../store/gameStore';
 import { CoinIcon } from './ui/CoinPill';
+import { popIn, useReduceMotion } from './motion';
 import { NeonButton } from './NeonButton';
 import { Panel } from './Panel';
 
@@ -32,6 +33,7 @@ export function LevelCompleteOverlay({
   onReplay,
   onLevels,
 }: Props) {
+  const reduceMotion = useReduceMotion();
   const earned = (rewards ? rewards.coinsFromRun + rewards.bonusCoins : 0) + result.levelCoins;
   const checks = [
     { done: result.finished, text: 'Reach the finish' },
@@ -44,15 +46,12 @@ export function LevelCompleteOverlay({
 
   return (
     <Panel title={`LEVEL ${level.number}`} titleColor={UI.accent}>
-      <Text style={styles.cleared}>CLEARED!</Text>
+      <Text maxFontSizeMultiplier={1.3} style={styles.cleared}>
+        CLEARED!
+      </Text>
       <View style={styles.stars} accessibilityLabel={`${result.stars} of 3 stars`}>
         {[1, 2, 3].map((n) => (
-          <Animated.View
-            key={n}
-            entering={ZoomIn.delay(200 + n * 220)
-              .duration(220)
-              .easing(Easing.out(Easing.cubic))}
-          >
+          <Animated.View key={n} entering={popIn(reduceMotion, 200 + n * 220)}>
             <Ionicons
               name={n <= result.stars ? 'star' : 'star-outline'}
               size={n === 2 ? 56 : 46}
@@ -69,16 +68,29 @@ export function LevelCompleteOverlay({
             size={20}
             color={c.done ? UI.accent : UI.textDim}
           />
-          <Text style={[styles.checkText, !c.done && { color: UI.textDim }]}>{c.text}</Text>
+          <Text
+            maxFontSizeMultiplier={1.3}
+            style={[styles.checkText, !c.done && { color: UI.textDim }]}
+          >
+            {c.text}
+          </Text>
         </Animated.View>
       ))}
 
       <View style={styles.earned}>
         <CoinIcon size={20} />
-        <Text style={styles.earnedText}>+{earned.toLocaleString()}</Text>
-        {rewards && <Text style={styles.xp}>+{rewards.xpEarned} XP</Text>}
+        <Text maxFontSizeMultiplier={1.3} style={styles.earnedText}>
+          +{earned.toLocaleString()}
+        </Text>
+        {rewards && (
+          <Text maxFontSizeMultiplier={1.3} style={styles.xp}>
+            +{rewards.xpEarned} XP
+          </Text>
+        )}
         {result.stars > result.previousStars && result.previousStars > 0 && (
-          <Text style={styles.improved}>New best!</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.improved}>
+            New best!
+          </Text>
         )}
       </View>
 

@@ -21,6 +21,7 @@ import { useProfileStore } from '../store/profileStore';
 import { CoinPill } from './ui/CoinPill';
 import { IconTile } from './ui/IconTile';
 import type { MenuLayout } from './menuLayout';
+import { useReduceMotion } from './motion';
 import { LevelBadge } from './ui/LevelBadge';
 import { ProgressBar } from './ui/ProgressBar';
 import { NeonButton } from './NeonButton';
@@ -40,14 +41,19 @@ export function MainMenu({ top, bottom, layout, onPlay }: Props) {
   const refreshDaily = useProfileStore((s) => s.refreshDaily);
   // A new day brings a new daily challenge.
   useEffect(refreshDaily, [refreshDaily]);
+  const reduceMotion = useReduceMotion();
   const pulse = useSharedValue(0);
   useEffect(() => {
+    if (reduceMotion) {
+      pulse.value = 0;
+      return;
+    }
     pulse.value = withRepeat(
       withTiming(1, { duration: 900, easing: Easing.inOut(Easing.quad) }),
       -1,
       true,
     );
-  }, [pulse]);
+  }, [pulse, reduceMotion]);
   const playStyle = useAnimatedStyle(() => ({ transform: [{ scale: 1 + pulse.value * 0.04 }] }));
 
   const daily = profile.daily;

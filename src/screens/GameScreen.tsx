@@ -129,7 +129,12 @@ function Game({ width, height, hudFont, hudSmallFont }: GameProps) {
   return (
     <View style={StyleSheet.absoluteFill}>
       <GestureDetector gesture={gesture}>
-        <View style={StyleSheet.absoluteFill}>
+        <View
+          style={StyleSheet.absoluteFill}
+          accessible={phase === 'running'}
+          accessibilityLabel="Game track"
+          accessibilityHint="Swipe up to jump, down to slide, left or right to change lanes"
+        >
           <Canvas style={StyleSheet.absoluteFill}>
             <Picture picture={picture} />
           </Canvas>

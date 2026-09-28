@@ -157,7 +157,7 @@ function drawGate(
     ab - aw * 0.55,
     cx - aw * 0.35,
     ab - aw * 0.55,
-    res.ui.white,
+    beam.arrow,
     0.95 * alpha,
   );
   fillQuad(
@@ -171,7 +171,7 @@ function drawGate(
     ab,
     cx,
     ab,
-    res.ui.white,
+    beam.arrow,
     0.95 * alpha,
   );
 }

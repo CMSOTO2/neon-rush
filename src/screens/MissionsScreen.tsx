@@ -20,16 +20,24 @@ export function MissionsScreen() {
 
   return (
     <ScreenShell title="Missions">
-      <Animated.View entering={FadeInDown} style={[styles.card, styles.daily]}>
+      <Animated.View entering={FadeInDown} style={[styles.card, styles.daily]} accessible>
         <View style={styles.head}>
           <Ionicons name="flame" size={20} color={UI.gold} />
-          <Text style={styles.headTitle}>DAILY CHALLENGE</Text>
-          {daily.streak > 0 && <Text style={styles.streak}>{daily.streak}-day streak</Text>}
+          <Text maxFontSizeMultiplier={1.5} style={styles.headTitle}>
+            DAILY CHALLENGE
+          </Text>
+          {daily.streak > 0 && (
+            <Text maxFontSizeMultiplier={1.5} style={styles.streak}>
+              {daily.streak}-day streak
+            </Text>
+          )}
         </View>
-        <Text style={styles.text}>{missionText(daily)}</Text>
+        <Text maxFontSizeMultiplier={1.5} style={styles.text}>
+          {missionText(daily)}
+        </Text>
         <ProgressBar value={daily.progress / daily.target} color={UI.gold} height={10} />
         <View style={styles.foot}>
-          <Text style={styles.progress}>
+          <Text maxFontSizeMultiplier={1.5} style={styles.progress}>
             {daily.done
               ? 'Completed today. Come back tomorrow to keep your streak!'
               : `${daily.progress.toLocaleString()} / ${daily.target.toLocaleString()}`}
@@ -37,32 +45,49 @@ export function MissionsScreen() {
           {!daily.done && (
             <View style={styles.reward}>
               <CoinIcon size={16} />
-              <Text style={styles.rewardText}>{dailyReward(daily.streak + 1)}</Text>
+              <Text maxFontSizeMultiplier={1.5} style={styles.rewardText}>
+                {dailyReward(daily.streak + 1)}
+              </Text>
             </View>
           )}
         </View>
       </Animated.View>
 
-      <Text style={styles.section}>ACTIVE MISSIONS</Text>
+      <Text maxFontSizeMultiplier={1.5} style={styles.section}>
+        ACTIVE MISSIONS
+      </Text>
       {profile.missions.map((m, i) => (
-        <Animated.View key={m.id} entering={FadeInDown.delay(80 + i * 60)} style={styles.card}>
+        <Animated.View
+          key={m.id}
+          entering={FadeInDown.delay(80 + i * 60)}
+          style={styles.card}
+          accessible
+        >
           <View style={styles.head}>
             <Ionicons name="flag" size={18} color={UI.accent} />
-            <Text style={styles.headTitle}>TIER {m.tier}</Text>
+            <Text maxFontSizeMultiplier={1.5} style={styles.headTitle}>
+              TIER {m.tier}
+            </Text>
             <View style={styles.reward}>
               <CoinIcon size={16} />
-              <Text style={styles.rewardText}>{m.reward}</Text>
-              <Text style={styles.xp}>+{m.xp} XP</Text>
+              <Text maxFontSizeMultiplier={1.5} style={styles.rewardText}>
+                {m.reward}
+              </Text>
+              <Text maxFontSizeMultiplier={1.5} style={styles.xp}>
+                +{m.xp} XP
+              </Text>
             </View>
           </View>
-          <Text style={styles.text}>{missionText(m)}</Text>
+          <Text maxFontSizeMultiplier={1.5} style={styles.text}>
+            {missionText(m)}
+          </Text>
           <ProgressBar value={m.progress / m.target} height={10} />
-          <Text style={styles.progress}>
+          <Text maxFontSizeMultiplier={1.5} style={styles.progress}>
             {m.progress.toLocaleString()} / {m.target.toLocaleString()}
           </Text>
         </Animated.View>
       ))}
-      <Text style={styles.note}>
+      <Text maxFontSizeMultiplier={1.5} style={styles.note}>
         Missions complete at the end of a run. Each one you finish is replaced by a slightly harder
         one. Completed so far: {profile.life.missionsCompleted}
       </Text>

@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { ComponentProps } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { Easing, FadeInDown, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { FONTS } from '../constants/fonts';
 import { UI } from '../constants/palette';
@@ -13,6 +13,7 @@ import type { RunResult } from '../store/gameStore';
 import { useProfileStore } from '../store/profileStore';
 import { CoinIcon } from './ui/CoinPill';
 import { LevelBadge } from './ui/LevelBadge';
+import { popIn, useReduceMotion } from './motion';
 import { NeonButton } from './NeonButton';
 import { Panel, usePanelCompact } from './Panel';
 
@@ -56,6 +57,7 @@ export function GameOverOverlay({ result, rewards, level, onRestart, onMenu }: P
   const xp = useProfileStore((s) => s.profile.xp);
   const best = useProfileStore((s) => s.profile.life.bestScore);
   const compact = usePanelCompact();
+  const reduceMotion = useReduceMotion();
   const lines = rewards ? rewardLines(rewards) : [];
   const shown = lines.slice(0, compact ? 3 : 4);
 
@@ -63,27 +65,33 @@ export function GameOverOverlay({ result, rewards, level, onRestart, onMenu }: P
     <Panel title={level ? `LEVEL ${level.number}` : 'CRASHED!'} titleColor={UI.accentHot}>
       {level && (
         <View style={styles.scoreBlock}>
-          <Text style={styles.scoreLabel}>SO CLOSE! YOU MADE IT</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.scoreLabel}>
+            SO CLOSE! YOU MADE IT
+          </Text>
           <Text style={[styles.score, compact && styles.scoreCompact]} maxFontSizeMultiplier={1}>
             {Math.min(99, Math.floor((result.distance / level.length) * 100))}%
           </Text>
         </View>
       )}
       <View style={[styles.scoreBlock, level ? styles.hidden : null]}>
-        <Text style={styles.scoreLabel}>SCORE</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.scoreLabel}>
+          SCORE
+        </Text>
         <Text style={[styles.score, compact && styles.scoreCompact]} maxFontSizeMultiplier={1}>
           {result.score.toLocaleString()}
         </Text>
         {rewards?.newBestScore ? (
-          <Animated.View
-            entering={ZoomIn.delay(250).duration(220).easing(Easing.out(Easing.cubic))}
-          >
+          <Animated.View entering={popIn(reduceMotion, 250)}>
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>NEW BEST!</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.badgeText}>
+                NEW BEST!
+              </Text>
             </View>
           </Animated.View>
         ) : (
-          <Text style={styles.bestLine}>Best {best.toLocaleString()}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.bestLine}>
+            Best {best.toLocaleString()}
+          </Text>
         )}
       </View>
 
@@ -96,10 +104,12 @@ export function GameOverOverlay({ result, rewards, level, onRestart, onMenu }: P
       {rewards && (
         <View style={styles.earned}>
           <CoinIcon size={20} />
-          <Text style={styles.earnedText}>
+          <Text maxFontSizeMultiplier={1.3} style={styles.earnedText}>
             +{(rewards.coinsFromRun + rewards.bonusCoins).toLocaleString()}
           </Text>
-          <Text style={styles.xpText}>+{rewards.xpEarned} XP</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.xpText}>
+            +{rewards.xpEarned} XP
+          </Text>
           <View style={styles.flex} />
           <LevelBadge xp={xp} />
         </View>
@@ -112,13 +122,15 @@ export function GameOverOverlay({ result, rewards, level, onRestart, onMenu }: P
           style={styles.line}
         >
           <Ionicons name={line.icon} size={18} color={line.color} />
-          <Text style={styles.lineText} numberOfLines={1}>
+          <Text maxFontSizeMultiplier={1.3} style={styles.lineText} numberOfLines={1}>
             {line.text}
           </Text>
         </Animated.View>
       ))}
       {lines.length > shown.length && (
-        <Text style={styles.more}>+{lines.length - shown.length} more</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.more}>
+          +{lines.length - shown.length} more
+        </Text>
       )}
 
       <NeonButton label={level ? 'RETRY' : 'RUN AGAIN'} onPress={onRestart} />
@@ -130,8 +142,12 @@ export function GameOverOverlay({ result, rewards, level, onRestart, onMenu }: P
 function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <View style={styles.stat}>
-      <Text style={[styles.statValue, color ? { color } : null]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <Text maxFontSizeMultiplier={1.3} style={[styles.statValue, color ? { color } : null]}>
+        {value}
+      </Text>
+      <Text maxFontSizeMultiplier={1.3} style={styles.statLabel}>
+        {label}
+      </Text>
     </View>
   );
 }
