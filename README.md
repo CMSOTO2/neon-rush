@@ -2,6 +2,16 @@
 
 A 2.5D endless runner for iOS and Android, built with Expo (SDK 57), React Native Skia, Reanimated and Gesture Handler. The original brief is in [SPEC.md](SPEC.md), what's next is in [ROADMAP.md](ROADMAP.md), and the post-launch money plan is in [MONETIZATION.md](MONETIZATION.md).
 
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/menu.png" width="160" alt="Neon Rush main menu: the neon title over a synthwave city street, daily challenge and mission cards, a Play button and a row of menu tabs"><br><sub>Menu</sub></td>
+    <td align="center"><img src="docs/screenshots/city.png" width="160" alt="Neon City: the runner collecting a trail of coins down a glowing magenta road between neon skyscrapers, with trams ahead"><br><sub>Neon City</sub></td>
+    <td align="center"><img src="docs/screenshots/beach.png" width="160" alt="Sunset Beach: the runner surfing a glowing current at dusk, palm trees and beach huts on the left, sailboats and rocks on the right"><br><sub>Sunset Beach</sub></td>
+    <td align="center"><img src="docs/screenshots/jungle.png" width="160" alt="Neon Jungle: the runner on a stone causeway through a bioluminescent jungle with giant trees, glowing mushrooms and carved wooden obstacles"><br><sub>Neon Jungle</sub></td>
+    <td align="center"><img src="docs/screenshots/mountain.png" width="160" alt="Snowy Mountain: the runner snowboarding a night piste with cyan edges under a full moon and an aurora, past snowy pines and snowcats"><br><sub>Snowy Mountain</sub></td>
+  </tr>
+</table>
+
 ## Run it
 
 ```bash
