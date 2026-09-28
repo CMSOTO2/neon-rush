@@ -49,6 +49,8 @@ A 2.5D endless runner. Start with README.md (what exists, architecture), ROADMAP
 - Commit as you go, and run `npm run format` (Prettier) before every commit.
 - Don't add new unit tests (the owner's preference). Existing bun tests can be run: `npm test`.
 - Before calling work done: `npm run typecheck`, `npx expo lint`, `npm test`.
+- Update README.md, ROADMAP.md and this file as part of every set of changes that affects them (the owner's standing instruction).
+- After committing, push to `origin` once all three pass (the owner's standing instruction). Never push with a failing check.
 - Game rules and data live in plain TypeScript (`src/progression/`, `src/game/levels/`, `src/game/powerups/`); keep React out of them.
 - **Performance is a priority** (the owner's call). The game must hold 60 FPS, and 120 on ProMotion iPhones, with no hitches. For any change that touches the frame loop, rendering, audio, haptics or anything else on the main thread, run a run with `EXPO_PUBLIC_PERF=1` before and after and check that `slow frames` stays at 0. Say what you measured. Prefer the cheaper design even if it's more code, and don't add a native module that does work on the main thread per game event.
 

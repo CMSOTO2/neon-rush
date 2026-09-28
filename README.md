@@ -36,6 +36,7 @@ npm run format      # prettier
 - **Audio.** Original synthesized sound effects and a synthwave loop (`npm run sfx`, `npm run music` regenerate them), played through Web Audio in a hidden WebView on iOS and Android, plus haptics.
 - **Tutorial.** The first endless run freezes before a barrier, a laser gate and two trams with a swipe hint, and waits for the move. It can be replayed from Settings.
 - **Settings.** Music, sound effects, vibration, reduce motion (defaults to the system setting), replay tutorial, and reset progress.
+- **Accessibility.** Text scales with Dynamic Type, capped so dense screens still fit. Controls are labelled and at least 44 pt. Reduce motion removes shake, speed lines, the PLAY pulse and zooms. Each world's laser colour keeps 3:1 contrast for common colour-blindness types (`gateBeam` in `constants/palette.ts`; check any new world's colours the same way).
 
 No ads, no purchases, fully offline. See [MONETIZATION.md](MONETIZATION.md) for the post-launch plan.
 

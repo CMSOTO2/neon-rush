@@ -21,7 +21,7 @@ All four build milestones from the brief are in place, plus a level campaign:
 | Save: versioned, validated, local only                                                                                | Done                    |
 | First-run tutorial (swipe lessons, replayable from Settings)                                                          | Done                    |
 | Menus laid out for iPhone SE through Pro Max                                                                          | Done                    |
-| Accessibility: reduce motion, screen-reader labels on menus                                                           | Partly                  |
+| Accessibility: reduce motion, screen-reader labels, text scaling, 44 pt targets, colour-blind-safe lasers             | Done                    |
 | Tested on a real phone                                                                                                | iPhone 16 Pro Max, once |
 | Tested on Android                                                                                                     | Emulator, briefly       |
 | App icon, splash, store assets                                                                                        | **Still Expo defaults** |
@@ -51,7 +51,12 @@ These block a TestFlight or internal-testing build.
 9. **Chaser mechanic.** After a side hit, a security drone appears behind the runner, and a second hit within a few seconds ends the run. That adds tension and makes stumbles matter (Subway Surfers does the equivalent with its guard).
 10. **More music.** One 17-second loop gets repetitive. Add a second, calmer menu track and a longer run track with variations (`scripts/generate-music.mjs`), or commission original music.
 11. **Tune the campaign.** All 20 levels are finishable by the bot, but later levels reach top speed quickly and then flatten out. Consider hand-picked rows at the start of each level, per-level obstacle themes (a "gates" level, a "gaps" level), and a boss-style final level per world.
-12. **Accessibility pass.** Cap font scaling on dense UI (`maxFontSizeMultiplier`), check obstacle colours for colour-blind players (each already has a distinct shape cue), and make sure every control has a label and a large enough hit area.
+12. ~~**Accessibility pass.**~~ Done:
+    - **Text size:** every text element has a Dynamic Type cap (1.2-1.3x on fixed layouts like the menu, panels and pills; 1.4-1.5x on scrolling screens). Checked at Accessibility XXXL on an iPhone SE.
+    - **Controls:** all have a role and label and are at least 44 pt (the Runners tabs and world arrows were smaller). Mission and award cards read as one item each. Result panels are modal for VoiceOver, with a header title. The game area has a label and a swipe hint.
+    - **Reduce motion:** the in-app setting now also stops the PLAY pulse and turns panel and badge zooms into fades.
+    - **Colour blindness:** gameplay was simulated for protan, deutan and tritan vision. Obstacles stay distinct by shape and brightness. The laser beam dropped to 2.4:1 against the city sky for protans, and to 1.4:1 on the beach road for everyone. Each world now has its own laser colour (brighter pink in the city, ice cyan on the beach) with at least 3:1 contrast for all four vision types. The beach gets a dark slide arrow.
+    - **Still open:** the Skia HUD (score, coins, power-up timers) isn't readable by screen readers, and the swipe game itself isn't playable with VoiceOver on. That's normal for action games, but worth an announcement on game over.
 13. **Local anonymous metrics** (MONETIZATION.md phase 0): runs per day, session length, revives used, where runs end. Keep them on the device and show them in a hidden dev screen. They're needed before any monetization decision.
 
 ## P2: content and polish
@@ -60,6 +65,7 @@ These block a TestFlight or internal-testing build.
     - Amusement Park: ferris wheels, coaster tracks, balloon stalls.
     - Snowy Mountain: pines, cabins, falling snow particles.
     - Space Station: modules, windows onto stars, low-gravity jumps.
+      Keep new worlds within the frame budget: Sunset Beach already records at ~3.3 ms a frame against ~2.3 ms for the city (the palms are the cost), so measure with `EXPO_PUBLIC_PERF=1` and simplify scenery if it's heavier.
       Add ten campaign levels per world (`progression/campaign.ts`).
 15. **More runners and cosmetics:** two per new world, plus seasonal items. Everything is data in `progression/cosmetics.ts` and `game/characters/characters.ts`.
 16. **New power-up ideas:** super sneakers (higher jumps), a coin rush (all obstacles become coins for a few seconds), and a score-bank (keep 50% on crash). Each is an entry in `powerups/powerups.ts` plus an effect.
