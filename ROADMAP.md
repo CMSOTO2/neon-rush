@@ -26,7 +26,7 @@ All four build milestones from the brief are in place, plus a level campaign:
 | Tested on Android                                                                                                     | Emulator, briefly       |
 | App icon, splash, store assets                                                                                        | **Still Expo defaults** |
 
-Measured on the iOS simulator: about 0.05 ms of simulation and 1.8 ms of drawing per frame (the 60 FPS budget is 16.7 ms).
+Measured on the iOS simulator: about 0.06 ms of simulation, 2.4 ms to record a frame and ~2 ms of Skia raster (the budget is 16.7 ms at 60 Hz, 8.3 ms at 120 Hz), and no dropped frames over a 40-second run with sound on.
 
 ---
 
@@ -35,12 +35,12 @@ Measured on the iOS simulator: about 0.05 ms of simulation and 1.8 ms of drawing
 These block a TestFlight or internal-testing build.
 
 1. **Play it on real phones.** First iPhone session (16 Pro Max) found two bugs, both fixed:
-   - _Frame hitches on every landing and power-up._ expo-haptics creates a feedback generator on the main thread per call, and the game loop runs on that thread. Haptics now fire only on hits and crashes, throttled to one per 400 ms. **Re-test:** jumps and pickups should be smooth. If hits still hitch, drop haptics to crash-only.
+   - _Frame hitches on every jump, coin and power-up._ Mostly the sound effects: expo-audio's AVPlayer status observer blocks the main thread (where the game loop runs) on every play. Sound now goes through Web Audio in a hidden WebView, and the simulator went from 3-17 dropped frames per 2 s to none. Haptics also stall the main thread, so they only fire on hits, throttled. **Re-test on the phone:** runs should hold 60/120 FPS with sound on, and sounds should play with the ring switch on silent (the WebView path is new; if it's silent, that's the first thing to check).
    - _No sound._ The audio session respected the silent switch (the simulator has none). It now plays through it and mixes with other audio.
      Still to check on a phone: swipe feel (threshold is 4.5% of screen width, `input/useSwipeGesture.ts`), lane change speed, jump height and slide length (`game/config.ts`), whether the first 30 seconds are fun, and the tutorial with a real first-time player.
 2. **Android pass.** The game runs in Expo Go on the Android emulator (API 36): fonts, Skia canvas and HUD render correctly, and back pauses a run. Fixed: translucent buttons showed a dark box (elevation shadow). The emulator was too starved to judge frame rate or audio, so this still needs a real Android phone: audio mode, haptics strength, the status and navigation bars.
 3. ~~**Handle the Android back button.**~~ Done: back pauses a run, resumes from pause, declines a continue, and leaves result panels for the menu (`screens/GameScreen.tsx`).
-4. **Measure performance on a mid-range Android phone** with `EXPO_PUBLIC_PERF=1`. If drawing is over ~8 ms a frame, the cheapest wins are: fewer window rectangles on buildings, batching same-coloured quads into one path (as the lane dashes already are), and dropping scenery detail beyond ~80 m.
+4. **Measure performance on a mid-range Android phone** with `EXPO_PUBLIC_PERF=1`, watching `slow frames` more than the averages. Expo Go runs a development bundle, so also try `npx expo start --no-dev --minify` for release-like numbers. If recording is over ~6 ms a frame, the next wins are: fewer window rectangles on buildings, simpler runner geometry at a distance, and dropping scenery detail beyond ~80 m. Don't batch quads into one many-contour path; Skia fills those on the CPU.
 5. **App identity.** Replace the Expo template icon, adaptive icon, splash and favicon in `assets/`. Set the real `ios.bundleIdentifier` and `android.package` in `app.json` (currently placeholders `com.cmsoto.neonrush`).
 6. ~~**First-run tutorial.**~~ Done: the first endless run uses three scripted rows (barrier, laser gate, two trams) and freezes before each with a swipe hint until the player makes the move (`systems/tutorialSystem.ts`). `tutorialDone` is saved; Settings can replay it. Levels don't run it, so a player who opens Levels first skips the lessons until their first endless run.
 7. **Economy check.** Play 10–15 runs and note coins per run. Upgrade costs (300 → 9,500), cosmetic prices (600–2,500) and the continue cost (150, then 300) should feel reachable. Early levels should unlock something every few runs.

@@ -33,7 +33,7 @@ npm run format      # prettier
 - **Progression.** Coins, XP and player levels, three escalating missions at a time, a daily challenge with streaks, 13 achievements, and the option to continue after a crash for coins. Everything saves locally.
 - **Cosmetics** (no gameplay effect): 4 runners, alternate outfits, head gear, trails, and hoverboards, unlocked with coins, levels or achievements.
 - **Worlds.** Neon City, and Sunset Beach (unlocks at level 3).
-- **Audio.** Original synthesized sound effects and a synthwave loop (`npm run sfx`, `npm run music` regenerate them), plus haptics.
+- **Audio.** Original synthesized sound effects and a synthwave loop (`npm run sfx`, `npm run music` regenerate them), played through Web Audio in a hidden WebView on iOS and Android, plus haptics.
 - **Tutorial.** The first endless run freezes before a barrier, a laser gate and two trams with a swipe hint, and waits for the move. It can be replayed from Settings.
 - **Settings.** Music, sound effects, vibration, reduce motion (defaults to the system setting), replay tutorial, and reset progress.
 
@@ -51,7 +51,7 @@ Dev builds only. Set them when starting Metro, e.g. `EXPO_PUBLIC_AUTOSTART=1 npx
 | `EXPO_PUBLIC_INVINCIBLE=1`   | Obstacles can't end the run                                     |
 | `EXPO_PUBLIC_WORLD=beach`    | Show a world regardless of unlocks                              |
 | `EXPO_PUBLIC_TIMESCALE=0.25` | Slow motion                                                     |
-| `EXPO_PUBLIC_PERF=1`         | Log simulation and drawing time per frame                       |
+| `EXPO_PUBLIC_PERF=1`         | Log frame timings every 2 s, including frames that missed 60 Hz |
 | `EXPO_PUBLIC_TUTORIAL=1`     | Play the first-run tutorial on every endless run                |
 
 Screens can be opened directly in Expo Go with deep links, e.g. `xcrun simctl openurl booted exp://127.0.0.1:8081/--/shop`.
@@ -69,7 +69,7 @@ src/
                        (the persisted save)
   progression/         Pure rules: economy, XP, missions, daily, achievements,
                        cosmetics, campaign, save format (profile.ts), applyRun
-  audio/               Sound effects and music
+  audio/               Sound effects, music, and the Web Audio host (audioHost.tsx)
   constants/           Environments and palettes, fonts, dev switches
   game/
     config.ts          Tunables: lanes, jump, slide, obstacles, coins, power-ups
@@ -86,11 +86,16 @@ src/
 
 **The whole game loop runs on the UI thread.** Engine files start with a `'worklet';` directive. A Reanimated frame callback steps the simulation, records the frame into a Skia picture, and hands it to a `<Canvas>`. Swipes are recognised in Gesture Handler worklets and go straight into the engine, so input never waits on the JS thread. React only hears about phase changes (start, game over, level complete) through `scheduleOnRN`, so it re-renders a few times per run, not every frame. The loop stops while paused or while another screen covers the game.
 
-**Haptics and audio stay off the frame.** Gesture and frame worklets run on the main thread, and so does expo-haptics, which builds a feedback generator per call. So haptics only fire on hits (throttled), never on routine events like landing. The audio session plays with the silent switch on and mixes with other apps.
+**Nothing else may block the main thread.** The frame callback, gestures and Skia's raster all run on the iOS main thread, so any native module that does work or waits there shows up as a dropped frame. Two did:
+
+- _expo-audio._ Every play or rewind fires an AVPlayer status observer on the main thread, and that observer waits on AVPlayer's internal lock while CoreMedia processes the seek. Each coin, jump or power-up sound stalled a frame for 30-80 ms, clustering into 3-17 dropped frames per 2 seconds during coin streaks. In Expo Go it was worse still, because `require()`d assets are HTTP URLs on the dev server, so AVPlayer streamed every sound and each rewind was a network request. On iOS and Android all sound now plays through Web Audio in a hidden WebView (`audio/audioHost.tsx`): clips are decoded once, and playing is one short message per frame, handled in WebKit's own process. A silent looping `<audio>` element keeps Web Audio playing with the ring switch on. The web build still uses expo-audio.
+- _expo-haptics_ builds a feedback generator on the main thread for each call, so haptics only fire on hits (throttled), never on routine events like landing.
+
+To find this kind of stall, averages are useless (they stayed at ~2.5 ms). Use the `slow frames` count from `EXPO_PUBLIC_PERF=1`, then `sample <pid> 10 1 -mayDie` on the simulator's Expo Go process. Unlike Time Profiler, it records threads that are blocked, not just running.
 
 **The main menu is laid out around the runner** (`components/menuLayout.ts`): the scene is raised just enough for the runner's feet to clear the bottom buttons, and the title, world picker and cards fill the space above its head. The same numbers go to the renderer, so the layout holds from an iPhone SE to a Pro Max.
 
-**Rendering is procedural 2.5D.** A pinhole camera sits behind the runner, sized from the viewport so the framing adapts to any screen. Obstacles and scenery are shaded boxes and paths, and the runner is drawn from joint positions, so there are no image assets to load. Paints, the path builder and rects are reused every frame; obstacles, coins, pickups and particles come from fixed pools. Measured on the iOS simulator with `EXPO_PUBLIC_PERF=1`: about 0.05 ms of simulation and 1.8 ms of drawing per frame.
+**Rendering is procedural 2.5D.** A pinhole camera sits behind the runner, sized from the viewport so the framing adapts to any screen. Obstacles and scenery are shaded boxes and paths, and the runner is drawn from joint positions, so there are no image assets to load. Paints, the path builder and rects are reused every frame; obstacles, coins, pickups and particles come from fixed pools. Detached paths and old frame pictures are `dispose()`d straight away rather than left for Hermes' GC, since each one reports native memory pressure. Keep paths to one convex shape per draw: Skia can't fill an anti-aliased many-contour path on the GPU and rasterizes it on the CPU (batching the road seams and lane dashes cost ~1 ms a frame that way). Measured on the iOS simulator with `EXPO_PUBLIC_PERF=1`: about 0.06 ms of simulation, 2.4 ms to record a frame, and ~2 ms of Skia raster, with no dropped frames over a 40-second run.
 
 **Adding content.** A power-up is an entry in `game/powerups/powerups.ts` plus its effect in `systems/powerUpSystem.ts`. A world is an entry in `constants/palette.ts` (and a scenery drawer if it needs new props). A cosmetic is an entry in `progression/cosmetics.ts` (characters also go in `game/characters/characters.ts`). Missions and achievements are data in `progression/`.
 

@@ -50,11 +50,14 @@ A 2.5D endless runner. Start with README.md (what exists, architecture), ROADMAP
 - Don't add new unit tests (the owner's preference). Existing bun tests can be run: `npm test`.
 - Before calling work done: `npm run typecheck`, `npx expo lint`, `npm test`.
 - Game rules and data live in plain TypeScript (`src/progression/`, `src/game/levels/`, `src/game/powerups/`); keep React out of them.
+- **Performance is a priority** (the owner's call). The game must hold 60 FPS, and 120 on ProMotion iPhones, with no hitches. For any change that touches the frame loop, rendering, audio, haptics or anything else on the main thread, run a run with `EXPO_PUBLIC_PERF=1` before and after and check that `slow frames` stays at 0. Say what you measured. Prefer the cheaper design even if it's more code, and don't add a native module that does work on the main thread per game event.
 
 ### Engine gotchas
 
 - Everything under `src/game/engine`, `systems`, `levels`, and `rendering` runs on the UI thread as worklets (`'worklet';` at the top of the file). In those files functions become constants, so define helpers **before** the functions that call them, and don't allocate per frame (reuse pools, the path builder and rects).
 - The camera near plane is 2 m on purpose (CanvasKit drops geometry projected to huge coordinates).
+- The game loop shares the iOS main thread with Skia's raster and every native module that works there. Don't play sounds with expo-audio on native (its AVPlayer observer blocks the main thread on every play; use `playSfx`/`playSfxMany`, which go through the Web Audio host in `audio/audioHost.tsx`), and keep haptics to rare events.
+- Draw one convex shape per path (`drawBuilt`), not many quads batched into one path: Skia rasterizes anti-aliased many-contour paths on the CPU. `drawBuilt` also disposes the path right away.
 - Level generation uses `state.rng`; cosmetic effects use `state.fxRng`. Don't mix them, or seeded runs and levels stop being reproducible.
 - Adding content: power-ups in `game/powerups/powerups.ts`, worlds in `constants/palette.ts` (+ a scenery drawer), cosmetics in `progression/cosmetics.ts`, levels in `progression/campaign.ts`.
 
@@ -66,4 +69,5 @@ A 2.5D endless runner. Start with README.md (what exists, architecture), ROADMAP
 - A second Metro with dev switches (e.g. `EXPO_PUBLIC_AUTOSTART=1 EXPO_PUBLIC_TUTORIAL=1 npx expo start --port 8082`) leaves the main one untouched.
 - Android emulator: `adb shell input tap x y` and `adb shell input keyevent 4` (back) give real touch and back input; `adb exec-out screencap -p` takes screenshots.
 - The simulator has no Taptic Engine or ring switch, so haptic stalls and silent-mode audio only show up on a real phone.
+- Profiling: `EXPO_PUBLIC_PERF=1` logs frame timings with a `slow frames` count. For stalls, run `sample <pid> 10 1 -mayDie -file out.txt` on the simulator's Expo Go process (`pgrep -f "Expo Go"`) and look at the main thread for lock waits (`psynch_mutexwait`). Time Profiler only samples running threads, so it misses blocked time.
 - Regenerate audio with `npm run sfx` and `npm run music`.
