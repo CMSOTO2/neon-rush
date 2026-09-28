@@ -3,7 +3,7 @@
 import { LANE_COUNT } from '../config';
 import { nextRandom, randomInt } from '../engine/random';
 import { ObstacleKind, type GameState } from '../types';
-import { densityAt, DIFFICULTY, safeLaneActionAt } from './difficulty';
+import { densityAt, DIFFICULTY, OBSTACLE_MIX, safeLaneActionAt } from './difficulty';
 
 // Row contents are written into a scratch buffer (-1 = empty lane) to avoid allocating.
 export const EMPTY = -1;
@@ -18,19 +18,21 @@ export const isTramCode = (code: number): boolean => {
 // Worklet files turn functions into constants, so helpers must be defined before use.
 function pickBlocker(state: GameState, distance: number): number {
   const u = DIFFICULTY.unlock;
+  const m = OBSTACLE_MIX[state.mix];
   const r = nextRandom(state);
-  if (distance >= u.tram && r < 0.42) return ObstacleKind.Tram;
-  if (distance >= u.gate && r < 0.64) return ObstacleKind.Gate;
-  if (distance >= u.gap && r < 0.8) return ObstacleKind.Gap;
+  if (distance >= u.tram && r < m.blockerTram) return ObstacleKind.Tram;
+  if (distance >= u.gate && r < m.blockerGate) return ObstacleKind.Gate;
+  if (distance >= m.gapUnlock && r < m.blockerGap) return ObstacleKind.Gap;
   return ObstacleKind.Barrier;
 }
 
 // Something the runner can pass with a jump or slide.
 function pickAction(state: GameState, distance: number): number {
   const u = DIFFICULTY.unlock;
+  const m = OBSTACLE_MIX[state.mix];
   const r = nextRandom(state);
-  if (distance >= u.gap && r < 0.25) return ObstacleKind.Gap;
-  if (distance >= u.gate && r < 0.6) return ObstacleKind.Gate;
+  if (distance >= m.gapUnlock && r < m.actionGap) return ObstacleKind.Gap;
+  if (distance >= u.gate && r < m.actionGate) return ObstacleKind.Gate;
   return ObstacleKind.Barrier;
 }
 
@@ -44,9 +46,15 @@ export function generateRow(state: GameState, distance: number, out: number[]): 
   const d = DIFFICULTY.unlock;
   for (let i = 0; i < LANE_COUNT; i++) out[i] = EMPTY;
 
-  if (distance >= d.fullRow && nextRandom(state) < DIFFICULTY.fullRowChance) {
-    const kind =
-      distance >= d.gate && nextRandom(state) < 0.5 ? ObstacleKind.Gate : ObstacleKind.Barrier;
+  const mix = OBSTACLE_MIX[state.mix];
+  if (distance >= d.fullRow && nextRandom(state) < mix.fullRowChance) {
+    // The standard mix never rolls for a gap row, so its sequence of rolls is unchanged.
+    const gapRow = mix.fullRowGap > 0 && nextRandom(state) < mix.fullRowGap;
+    const kind = gapRow
+      ? ObstacleKind.Gap
+      : distance >= d.gate && nextRandom(state) < 0.5
+        ? ObstacleKind.Gate
+        : ObstacleKind.Barrier;
     for (let i = 0; i < LANE_COUNT; i++) out[i] = kind;
     return;
   }

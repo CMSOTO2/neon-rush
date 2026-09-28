@@ -253,6 +253,9 @@ export type GameState = {
   camLift: number;
   // Accessibility: suppress shake, speed lines and flashing effects.
   reduceMotion: boolean;
+  // Obstacle mix for the world being played (OBSTACLE_MIX in levels/difficulty.ts). Set
+  // before each run; it shapes generation, so it must not change mid-run.
+  mix: number;
   // How the current world is travelled (RIDE in rendering/resources.ts). Cosmetic only:
   // it picks spray or dust effects, never anything that changes the run.
   ride: number;

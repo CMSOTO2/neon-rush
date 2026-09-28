@@ -7,6 +7,7 @@ import { scheduleOnRN, scheduleOnUI } from 'react-native-worklets';
 
 import { initSfx, playSfxMany, type SfxName } from '../audio/sfx';
 import { DEV } from '../constants/dev';
+import { getEnvironment } from '../constants/palette';
 import type { LevelDef } from '../progression/campaign';
 import type { Loadout } from '../progression/cosmetics';
 import { reviveCost } from '../progression/economy';
@@ -174,14 +175,20 @@ export function useGameLoop({
       texts: missions.map(missionText),
     });
   }, [missionGoals, missions]);
+  // The world's obstacle mix shapes generation, so it's fixed at the start of each run.
+  const obstacleMix = useSharedValue(getEnvironment(world).palette.mix);
+  useEffect(() => {
+    obstacleMix.set(getEnvironment(world).palette.mix);
+  }, [obstacleMix, world]);
   const applyRunSetup = useCallback(
     (state: GameState) => {
       'worklet';
       setUpgrades(state, upgradeLevels.get());
+      state.mix = obstacleMix.get();
       const goals = missionGoals.get();
       setMissionGoals(state, goals.stats, goals.needs, goals.texts);
     },
-    [upgradeLevels, missionGoals],
+    [upgradeLevels, missionGoals, obstacleMix],
   );
 
   const { character, outfit, accessory, trail, board } = loadout;
@@ -391,9 +398,12 @@ export function useGameLoop({
       });
     const startLevelOnUI = (def: LevelDef) => {
       const { seed, length, difficultyOffset, difficultyScale } = def;
+      // From the level's own world: the screen may not have re-rendered with it yet.
+      const mix = getEnvironment(def.world).palette.mix;
       onUI((rt) => {
         'worklet';
         applyRunSetup(rt.state);
+        rt.state.mix = mix;
         startLevel(rt.state, seed, length, difficultyOffset, difficultyScale);
       });
     };

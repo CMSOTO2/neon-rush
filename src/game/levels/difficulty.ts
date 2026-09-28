@@ -33,6 +33,36 @@ export const DIFFICULTY = {
   minRowGapMeters: 16,
 };
 
+// How often each obstacle kind is picked, per world. Only the kinds change: the safe-lane
+// rules in patterns.ts are the same, so every mix stays fair (the bot checks each one).
+// Chances are cumulative thresholds on one random roll, as in pickBlocker/pickAction.
+export const OBSTACLE_MIX = [
+  // 0: standard (city, beach, mountain).
+  {
+    blockerTram: 0.42,
+    blockerGate: 0.64,
+    blockerGap: 0.8,
+    actionGap: 0.25,
+    actionGate: 0.6,
+    fullRowChance: 0.14,
+    // Share of full rows that are gaps (the rest split between gates and barriers).
+    fullRowGap: 0,
+    gapUnlock: 320,
+  },
+  // 1: jumpy (jungle): fewer lane blockers, far more logs and gaps, and whole-width river
+  // crossings to jump.
+  {
+    blockerTram: 0.24,
+    blockerGate: 0.4,
+    blockerGap: 0.72,
+    actionGap: 0.45,
+    actionGate: 0.62,
+    fullRowChance: 0.2,
+    fullRowGap: 0.45,
+    gapUnlock: 140,
+  },
+];
+
 const ease = (distance: number, rampDistance: number): number =>
   1 - Math.exp(-distance / rampDistance);
 

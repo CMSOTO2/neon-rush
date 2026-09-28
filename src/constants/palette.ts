@@ -3,7 +3,7 @@
 // and drawObstacles.ts; every other world has its own module in rendering/worlds/ that
 // re-skins the same obstacle kinds (same hitboxes, same move cues) to fit the place.
 
-export type Scenery = 'city' | 'beach' | 'snow';
+export type Scenery = 'city' | 'beach' | 'snow' | 'jungle';
 
 // How the runner travels: on foot, or standing on a surfboard or snowboard.
 export type Ride = 'run' | 'surf' | 'snowboard';
@@ -11,6 +11,8 @@ export type Ride = 'run' | 'surf' | 'snowboard';
 export type EnvironmentPalette = {
   scenery: Scenery;
   ride: Ride;
+  // Obstacle mix (OBSTACLE_MIX in game/levels/difficulty.ts): 0 standard, 1 jump-heavy.
+  mix: number;
   // Landing dust or spray, and the particles thrown up while sliding.
   dust: string;
   spark: string;
@@ -46,6 +48,7 @@ export type EnvironmentPalette = {
 export const NEON_CITY: EnvironmentPalette = {
   scenery: 'city',
   ride: 'run',
+  mix: 0,
   dust: '#5ef2ff',
   spark: '#ffd84a',
   theme: {},
@@ -79,6 +82,7 @@ export const NEON_CITY: EnvironmentPalette = {
 export const SUNSET_BEACH: EnvironmentPalette = {
   scenery: 'beach',
   ride: 'surf',
+  mix: 0,
   dust: '#9ff6ff',
   spark: '#9ff6ff',
   // Unused here (the beach has a pier instead of lasers) but kept for the shared shape.
@@ -146,6 +150,7 @@ export const SUNSET_BEACH: EnvironmentPalette = {
 export const SNOWY_MOUNTAIN: EnvironmentPalette = {
   scenery: 'snow',
   ride: 'snowboard',
+  mix: 0,
   dust: '#eef4ff',
   spark: '#bff3ff',
   gateBeam: { fill: '#ff4fd8', edge: '#ffd1f3', glow: '#ff4fd8', arrow: '#ffffff' },
@@ -205,6 +210,73 @@ export const SNOWY_MOUNTAIN: EnvironmentPalette = {
   },
 };
 
+// A bioluminescent jungle at night, built for jumping: an ancient stone causeway with
+// glowing moss, vines along the edges, giant trees, glowing mushrooms and ruins, and a
+// river glowing through every break in the path.
+export const NEON_JUNGLE: EnvironmentPalette = {
+  scenery: 'jungle',
+  ride: 'run',
+  mix: 1,
+  dust: '#7dff9e',
+  spark: '#ffe14a',
+  gateBeam: { fill: '#bff5d0', edge: '#ffffff', glow: '#7dff9e', arrow: '#1a0b3a' },
+  groundHorizon: '#1f5a4a',
+  groundBottom: '#030d0b',
+  skyTop: '#050d24',
+  skyMid: '#123a52',
+  skyHorizon: '#1fae6a',
+  horizonGlow: '#b6ff6a',
+  sunTop: '#ffe66b',
+  sunBottom: '#ff3d8b',
+  stars: '#d8ffe8',
+  skyline: '#0a2a2a',
+  ground: '#0b2620',
+  groundGrid: '#7dff9e',
+  road: '#2b2d44',
+  roadFar: '#3d4a5a',
+  roadSeam: '#7dff9e',
+  laneDash: '#5ef2ff',
+  roadEdge: '#7dff9e',
+  roadEdgeGlow: '#7dff9e',
+  // Ruined pillars.
+  buildings: ['#3a4a5e', '#2f3d4f'],
+  windows: ['#5ef2ff', '#ff4fd8', '#b6ff6a'],
+  theme: {
+    trunk: '#3a2433',
+    trunkLight: '#5a3a44',
+    canopy: '#0f3d2e',
+    canopyLight: '#17553f',
+    neon: '#7dff9e',
+    neonHot: '#ff4fd8',
+    cyan: '#5ef2ff',
+    mushroom: '#ff4fd8',
+    mushroomCap: '#ffb3ec',
+    fern: '#1f7a4a',
+    // Light wood so logs and trunks stand out from the dark path (4:1 or better for all
+    // four vision types), with dark chevrons like the city barrier's.
+    log: '#c98a52',
+    logSide: '#8a5a3c',
+    logTop: '#e0a86a',
+    logInk: '#1a0b3a',
+    moss: '#7dff9e',
+    stone: '#4a5a6e',
+    stoneSide: '#34414f',
+    stoneTop: '#6e8098',
+    // The archway lintel and its arrow rune: 3:1 or better against the path for all four
+    // vision types.
+    lintel: '#bff5d0',
+    lintelInk: '#1a0b3a',
+    cart: '#7a4a2e',
+    cartSide: '#553321',
+    cartTop: '#9a6440',
+    rail: '#8a93a6',
+    lantern: '#ffe14a',
+    river: '#0a4a5a',
+    riverGlow: '#5ef2ff',
+    firefly: '#e8ff7a',
+  },
+};
+
 export type EnvironmentDef = {
   id: string;
   name: string;
@@ -216,6 +288,7 @@ export type EnvironmentDef = {
 export const ENVIRONMENTS: EnvironmentDef[] = [
   { id: 'city', name: 'Neon City', palette: NEON_CITY, unlockLevel: 1 },
   { id: 'beach', name: 'Sunset Beach', palette: SUNSET_BEACH, unlockLevel: 3 },
+  { id: 'jungle', name: 'Neon Jungle', palette: NEON_JUNGLE, unlockLevel: 6 },
   { id: 'mountain', name: 'Snowy Mountain', palette: SNOWY_MOUNTAIN, unlockLevel: 10 },
 ];
 

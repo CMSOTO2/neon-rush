@@ -29,6 +29,14 @@ import {
   drawMountainScenery,
   drawSnowfall,
 } from './worlds/mountain';
+import {
+  drawFireflies,
+  drawJungleGround,
+  drawJungleObstacle,
+  drawJunglePath,
+  drawJungleScenery,
+  drawRiverGaps,
+} from './worlds/jungle';
 
 // Mutable per-frame scratch that lives on the UI thread next to the game state.
 export type RenderScratch = {
@@ -130,6 +138,12 @@ export function renderFrame(
     drawMountainScenery(canvas, res, cam, scratch.face, state.time);
     drawMountainLane(canvas, res, cam);
     drawCrevasses(canvas, res, cam, state);
+  } else if (scenery === SCENERY.jungle) {
+    drawBackdrop(canvas, res, cam);
+    drawJungleGround(canvas, res, cam, state.time);
+    drawJungleScenery(canvas, res, cam, scratch.face, state.time);
+    drawJunglePath(canvas, res, cam);
+    drawRiverGaps(canvas, res, cam, state);
   } else {
     drawSkyAndGround(canvas, res, cam);
     drawBuildings(canvas, res, cam, scratch.face, state.time);
@@ -149,6 +163,8 @@ export function renderFrame(
       drawBeachObstacle(canvas, res, cam, scratch.face, state.obstacles[code], state.time);
     else if (scenery === SCENERY.snow)
       drawMountainObstacle(canvas, res, cam, scratch.face, state.obstacles[code], state.time);
+    else if (scenery === SCENERY.jungle)
+      drawJungleObstacle(canvas, res, cam, scratch.face, state.obstacles[code], state.time);
     else drawObstacle(canvas, res, cam, scratch.face, state.obstacles[code], state.time);
   }
 
@@ -161,6 +177,7 @@ export function renderFrame(
 
   drawParticles(canvas, res, cam, state);
   if (scenery === SCENERY.snow) drawSnowfall(canvas, res, state.time, state.reduceMotion);
+  else if (scenery === SCENERY.jungle) drawFireflies(canvas, res, state.time, state.reduceMotion);
   drawSpeedLines(canvas, res, cam, state);
   drawHud(canvas, res, state);
 }

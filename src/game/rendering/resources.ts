@@ -117,7 +117,7 @@ export type RenderResources = {
 };
 
 // Numeric codes the worklets switch on.
-export const SCENERY = { city: 0, beach: 1, snow: 2 } as const;
+export const SCENERY = { city: 0, beach: 1, snow: 2, jungle: 3 } as const;
 export const RIDE = { run: 0, surf: 1, snowboard: 2 } as const;
 
 function shade(hex: string, factor: number): SkColor {
@@ -259,15 +259,22 @@ function recordBackdrop(
       }
     }
   }
+  const rounded = beach || env.scenery === 'jungle';
   const layers =
     env.scenery === 'snow'
       ? []
-      : beach
-        ? [{ color: env.skyline, minH: 0.015, maxH: 0.06, step: [40, 90] }]
-        : [
-            { color: '#6a2a9e', minH: 0.08, maxH: 0.2, step: [14, 30] },
-            { color: env.skyline, minH: 0.05, maxH: 0.16, step: [18, 40] },
-          ];
+      : env.scenery === 'jungle'
+        ? [
+            // Treetops: two layers of rolling canopy.
+            { color: '#123a3a', minH: 0.08, maxH: 0.16, step: [30, 60] },
+            { color: env.skyline, minH: 0.04, maxH: 0.1, step: [24, 46] },
+          ]
+        : beach
+          ? [{ color: env.skyline, minH: 0.015, maxH: 0.06, step: [40, 90] }]
+          : [
+              { color: '#6a2a9e', minH: 0.08, maxH: 0.2, step: [14, 30] },
+              { color: env.skyline, minH: 0.05, maxH: 0.16, step: [18, 40] },
+            ];
   for (const layer of layers) {
     paint.setColor(Skia.Color(layer.color));
     const path = Skia.PathBuilder.Make();
@@ -276,7 +283,7 @@ function recordBackdrop(
     while (x < width + pad) {
       const w = layer.step[0] + rand() * (layer.step[1] - layer.step[0]);
       const h = horizonY * (layer.minH + rand() * (layer.maxH - layer.minH));
-      if (beach) {
+      if (rounded) {
         // Rounded hill instead of a flat roof.
         for (let i = 1; i <= 6; i++) {
           const a = (i / 6) * Math.PI;
@@ -349,7 +356,7 @@ export function createRenderResources(
     { x: 0, y: horizonY },
     { x: 0, y: height },
     [Skia.Color(env.groundHorizon), Skia.Color(env.ground), Skia.Color(env.groundBottom)],
-    [0, env.scenery === 'city' ? 0.35 : env.scenery === 'beach' ? 0.2 : 0.3, 1],
+    [0, env.scenery === 'beach' ? 0.2 : env.scenery === 'city' ? 0.35 : 0.3, 1],
     TileMode.Clamp,
   );
   const sunR = width * 0.26;
