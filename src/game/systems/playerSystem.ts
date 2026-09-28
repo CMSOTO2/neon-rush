@@ -147,8 +147,8 @@ export function updatePlayer(state: GameState, dt: number): void {
     }
   }
 
-  // Surfing: spray off the tail of the board.
-  if (state.ride === 1 && p.grounded && fxRandom(state) < dt * 28)
+  // Surfing or snowboarding: spray off the tail of the board.
+  if (state.ride !== 0 && p.grounded && fxRandom(state) < dt * 28)
     emitSpray(state, p.x, state.distance);
 
   // Stride rate follows run speed so feet don't skate.

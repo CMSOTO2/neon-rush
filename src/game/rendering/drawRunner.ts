@@ -268,10 +268,12 @@ function drawSurfboard(
   const z = state.distance;
   const y = p.y + 0.03;
   const th = res.theme;
-  const sT = scaleAt(cam, z - 0.35);
+  // A snowboard is shorter than a surfboard and rounded at both ends.
+  const snow = res.env.ride === 2;
+  const sT = scaleAt(cam, z - (snow ? 0.55 : 0.35));
   const sM = scaleAt(cam, z + 0.45);
-  const sN = scaleAt(cam, z + 1.55);
-  const sP = scaleAt(cam, z + 2.05);
+  const sN = scaleAt(cam, z + (snow ? 1.15 : 1.55));
+  const sP = scaleAt(cam, z + (snow ? 1.35 : 2.05));
   if (sT <= 0) return;
   // Glow on the water under the board.
   const s0 = scaleAt(cam, z + 0.3);
@@ -354,7 +356,8 @@ export function drawRunner(
 
   drawTrail(canvas, res, cam, state);
 
-  const surf = res.env.ride === 1;
+  // Surfboard or snowboard: the runner stands on a board and rides instead of running.
+  const surf = res.env.ride !== 0;
   const crashedNow = state.phase === Phase.Crashing || state.phase === Phase.Over;
   if (surf && !crashedNow) drawSurfboard(canvas, res, cam, state);
 

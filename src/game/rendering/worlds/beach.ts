@@ -655,7 +655,7 @@ function drawPier(
   canvas.drawLine(l + (r - l) * 0.8, deck, l + (r - l) * 0.8, top, res.stroke);
   const edge = Math.max(2, (bot - top) * 0.1);
   fillRect(canvas, res, l - edge, top - edge, r + edge, bot + edge, th.neonHot, 0.35 * alpha);
-  fillRect(canvas, res, l, top, r, bot, th.buoy, alpha);
+  fillRect(canvas, res, l, top, r, bot, th.sign, alpha);
   // Diagonal hazard stripes, then the down arrow: slide under.
   const n = 6;
   const bw = (r - l) / n;
@@ -672,7 +672,7 @@ function drawPier(
       top,
       x0 + bw * 0.5,
       bot,
-      th.stripe,
+      th.signInk,
       0.35 * alpha,
     );
   }
@@ -690,7 +690,7 @@ function drawPier(
     top + hh * 0.5,
     cx - aw * 0.3,
     top + hh * 0.5,
-    th.stripe,
+    th.signInk,
     alpha,
   );
   fillQuad(
@@ -704,7 +704,7 @@ function drawPier(
     bot - hh * 0.08,
     cx,
     bot - hh * 0.08,
-    th.stripe,
+    th.signInk,
     alpha,
   );
 }

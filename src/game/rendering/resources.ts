@@ -73,6 +73,9 @@ export type RenderResources = {
   groundShade: SkShader;
   sun: SkShader;
   backdrop: SkPicture;
+  // Props recorded once and replayed per instance (no paths built per frame). Unit size:
+  // 1 = the prop's height in meters, origin at its base, y down. Null where unused.
+  props: { pine: SkPicture | null };
   env: {
     // See SCENERY and RIDE below.
     scenery: number;
@@ -114,12 +117,39 @@ export type RenderResources = {
 };
 
 // Numeric codes the worklets switch on.
-export const SCENERY = { city: 0, beach: 1 } as const;
-export const RIDE = { run: 0, surf: 1 } as const;
+export const SCENERY = { city: 0, beach: 1, snow: 2 } as const;
+export const RIDE = { run: 0, surf: 1, snowboard: 2 } as const;
 
 function shade(hex: string, factor: number): SkColor {
   const c = Skia.Color(hex);
   return Float32Array.of(c[0] * factor, c[1] * factor, c[2] * factor, c[3]) as SkColor;
+}
+
+// A snowy pine at unit height: trunk, two tiers and a snow-capped tip.
+function recordPine(env: EnvironmentPalette): SkPicture {
+  const rec = Skia.PictureRecorder();
+  const canvas = rec.beginRecording(Skia.XYWHRect(-0.5, -1.05, 1, 1.1));
+  const paint = Skia.Paint();
+  paint.setAntiAlias(true);
+  const w = 0.34;
+  const tri = (ax: number, ay: number, bx: number, by: number, cx: number, cy: number) => {
+    const pb = Skia.PathBuilder.Make();
+    pb.moveTo(ax, -ay);
+    pb.lineTo(bx, -by);
+    pb.lineTo(cx, -cy);
+    pb.close();
+    canvas.drawPath(pb.detach(), paint);
+  };
+  paint.setColor(Skia.Color(env.theme.trunk));
+  canvas.drawRect(Skia.XYWHRect(-0.02, -0.3, 0.04, 0.3), paint);
+  paint.setColor(Skia.Color(env.theme.pineDark));
+  tri(-w, 0.18, w, 0.18, 0, 0.72);
+  paint.setColor(Skia.Color(env.theme.pine));
+  tri(-w * 0.72, 0.48, w * 0.72, 0.48, 0, 1);
+  paint.setColor(Skia.Color(env.theme.snow));
+  paint.setAlphaf(0.9);
+  tri(-w * 0.24, 0.83, w * 0.24, 0.83, 0, 1);
+  return rec.finishRecordingAsPicture();
 }
 
 // Sky, sun, stars and the far skyline never change during a run, so they're recorded
@@ -169,14 +199,75 @@ function recordBackdrop(
     canvas.drawRect(Skia.XYWHRect(width / 2 - sunR, bandY, sunR * 2, h), paint);
   }
 
-  // Two skyline layers: far (pale) and near (dark). The beach gets low rolling islands.
+  // Aurora over the mountains: soft wavy ribbons across the upper sky.
+  if (env.scenery === 'snow') {
+    const aurora = env.theme.aurora;
+    const ribbon = Skia.Paint();
+    ribbon.setAntiAlias(true);
+    ribbon.setStyle(PaintStyle.Stroke);
+    ribbon.setStrokeCap(StrokeCap.Round);
+    const colors = [aurora, env.horizonGlow, env.theme.neonHot];
+    for (let band = 0; band < 3; band++) {
+      const baseY = horizonY * (0.2 + band * 0.12);
+      for (let pass = 0; pass < 2; pass++) {
+        ribbon.setColor(Skia.Color(colors[band]));
+        ribbon.setAlphaf(pass === 0 ? 0.08 : 0.2);
+        ribbon.setStrokeWidth(pass === 0 ? horizonY * 0.09 : horizonY * 0.025);
+        const path = Skia.PathBuilder.Make();
+        for (let i = 0; i <= 24; i++) {
+          const x = -pad + ((width + pad * 2) * i) / 24;
+          const y = baseY + Math.sin(i * 0.7 + band * 2) * horizonY * 0.04;
+          if (i === 0) path.moveTo(x, y);
+          else path.lineTo(x, y);
+        }
+        canvas.drawPath(path.detach(), ribbon);
+      }
+    }
+  }
+
+  // Two skyline layers: far (pale) and near (dark). The beach gets low rolling islands
+  // and the mountain jagged peaks with snowcaps.
   const beach = env.scenery === 'beach';
-  const layers = beach
-    ? [{ color: env.skyline, minH: 0.015, maxH: 0.06, step: [40, 90] }]
-    : [
-        { color: '#6a2a9e', minH: 0.08, maxH: 0.2, step: [14, 30] },
-        { color: env.skyline, minH: 0.05, maxH: 0.16, step: [18, 40] },
-      ];
+  if (env.scenery === 'snow') {
+    const peaks = [
+      { color: '#3b3f9e', minH: 0.12, maxH: 0.3, step: [60, 120] },
+      { color: env.skyline, minH: 0.07, maxH: 0.18, step: [40, 90] },
+    ];
+    for (const layer of peaks) {
+      let x = -pad;
+      while (x < width + pad) {
+        const w = layer.step[0] + rand() * (layer.step[1] - layer.step[0]);
+        const h = horizonY * (layer.minH + rand() * (layer.maxH - layer.minH));
+        const peakX = x + w * (0.35 + rand() * 0.3);
+        const path = Skia.PathBuilder.Make();
+        path.moveTo(x - w * 0.3, horizonY + 2);
+        path.lineTo(peakX, horizonY - h);
+        path.lineTo(x + w * 1.3, horizonY + 2);
+        path.close();
+        paint.setColor(Skia.Color(layer.color));
+        canvas.drawPath(path.detach(), paint);
+        // Snowcap: the top quarter of the peak.
+        const cap = Skia.PathBuilder.Make();
+        const k = 0.25;
+        cap.moveTo(peakX - (peakX - (x - w * 0.3)) * k, horizonY - h + h * k);
+        cap.lineTo(peakX, horizonY - h);
+        cap.lineTo(peakX + (x + w * 1.3 - peakX) * k, horizonY - h + h * k);
+        cap.close();
+        paint.setColor(Skia.Color(env.theme.snowShade));
+        canvas.drawPath(cap.detach(), paint);
+        x += w;
+      }
+    }
+  }
+  const layers =
+    env.scenery === 'snow'
+      ? []
+      : beach
+        ? [{ color: env.skyline, minH: 0.015, maxH: 0.06, step: [40, 90] }]
+        : [
+            { color: '#6a2a9e', minH: 0.08, maxH: 0.2, step: [14, 30] },
+            { color: env.skyline, minH: 0.05, maxH: 0.16, step: [18, 40] },
+          ];
   for (const layer of layers) {
     paint.setColor(Skia.Color(layer.color));
     const path = Skia.PathBuilder.Make();
@@ -258,7 +349,7 @@ export function createRenderResources(
     { x: 0, y: horizonY },
     { x: 0, y: height },
     [Skia.Color(env.groundHorizon), Skia.Color(env.ground), Skia.Color(env.groundBottom)],
-    [0, env.scenery === 'beach' ? 0.2 : 0.35, 1],
+    [0, env.scenery === 'city' ? 0.35 : env.scenery === 'beach' ? 0.2 : 0.3, 1],
     TileMode.Clamp,
   );
   const sunR = width * 0.26;
@@ -292,6 +383,7 @@ export function createRenderResources(
     groundShade,
     sun,
     backdrop: recordBackdrop(width, horizonY, env, sky, sun),
+    props: { pine: env.scenery === 'snow' ? recordPine(env) : null },
     env: {
       scenery: SCENERY[env.scenery],
       ride: RIDE[env.ride],

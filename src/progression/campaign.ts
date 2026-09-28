@@ -1,3 +1,5 @@
+import { ENVIRONMENTS } from '../constants/palette';
+
 // Level mode: a campaign of fixed-length runs that end at a finish arch. Each level has a
 // fixed seed, so its layout is the same every attempt and can be learned, and a
 // difficulty offset so later levels start faster and busier. Endless mode is unchanged.
@@ -18,8 +20,9 @@ export type LevelDef = {
 
 export const LEVELS_PER_WORLD = 10;
 
+// Ten levels per world, in the order worlds unlock.
 function makeLevel(n: number): LevelDef {
-  const world = n <= LEVELS_PER_WORLD ? 'city' : 'beach';
+  const world = ENVIRONMENTS[Math.floor((n - 1) / LEVELS_PER_WORLD)].id;
   return {
     id: `L${n}`,
     number: n,
@@ -32,8 +35,9 @@ function makeLevel(n: number): LevelDef {
   };
 }
 
-export const CAMPAIGN: LevelDef[] = Array.from({ length: 2 * LEVELS_PER_WORLD }, (_, i) =>
-  makeLevel(i + 1),
+export const CAMPAIGN: LevelDef[] = Array.from(
+  { length: ENVIRONMENTS.length * LEVELS_PER_WORLD },
+  (_, i) => makeLevel(i + 1),
 );
 
 export function levelById(id: string): LevelDef | undefined {

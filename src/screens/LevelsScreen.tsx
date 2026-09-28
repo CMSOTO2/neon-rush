@@ -6,7 +6,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { playSfx } from '../audio/sfx';
 import { ScreenShell } from '../components/ui/ScreenShell';
 import { FONTS } from '../constants/fonts';
-import { getEnvironment, UI } from '../constants/palette';
+import { ENVIRONMENTS, getEnvironment, UI } from '../constants/palette';
 import {
   CAMPAIGN,
   COIN_STAR_SHARE,
@@ -17,7 +17,7 @@ import {
 import { useGameStore } from '../store/gameStore';
 import { useProfileStore } from '../store/profileStore';
 
-const WORLD_ORDER = ['city', 'beach'];
+const WORLD_ORDER = ENVIRONMENTS.map((e) => e.id);
 const STAR_RULES = [
   'Reach the finish',
   `Grab ${Math.round(COIN_STAR_SHARE * 100)}% of the coins`,

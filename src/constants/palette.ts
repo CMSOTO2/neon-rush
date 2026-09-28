@@ -3,10 +3,10 @@
 // and drawObstacles.ts; every other world has its own module in rendering/worlds/ that
 // re-skins the same obstacle kinds (same hitboxes, same move cues) to fit the place.
 
-export type Scenery = 'city' | 'beach';
+export type Scenery = 'city' | 'beach' | 'snow';
 
-// How the runner travels: on foot, or standing on a surfboard.
-export type Ride = 'run' | 'surf';
+// How the runner travels: on foot, or standing on a surfboard or snowboard.
+export type Ride = 'run' | 'surf' | 'snowboard';
 
 export type EnvironmentPalette = {
   scenery: Scenery;
@@ -134,6 +134,74 @@ export const SUNSET_BEACH: EnvironmentPalette = {
     lighthouseBand: '#ff4f6d',
     board: '#ffd84a',
     boardStripe: '#ff4f8a',
+    // The pier's warning board and its arrow: 3.5:1 or better against the lane for
+    // normal, protan, deutan and tritan vision.
+    sign: '#ffe14a',
+    signInk: '#1a0b3a',
+  },
+};
+
+// Snowboarding a night slope: a groomed piste with glowing cyan edges under a synth moon
+// and an aurora, pines strung with lights, lit cabins and a ski lift on the banks.
+export const SNOWY_MOUNTAIN: EnvironmentPalette = {
+  scenery: 'snow',
+  ride: 'snowboard',
+  dust: '#eef4ff',
+  spark: '#bff3ff',
+  gateBeam: { fill: '#ff4fd8', edge: '#ffd1f3', glow: '#ff4fd8', arrow: '#ffffff' },
+  groundHorizon: '#7a6fd6',
+  groundBottom: '#10123a',
+  skyTop: '#060a2a',
+  skyMid: '#1b1f6b',
+  skyHorizon: '#6a3fb5',
+  horizonGlow: '#39e6ff',
+  // A pale synth moon instead of the sunset sun.
+  sunTop: '#f2fbff',
+  sunBottom: '#7ad7ff',
+  stars: '#ffffff',
+  skyline: '#262a73',
+  ground: '#343a8e',
+  groundGrid: '#8a93e6',
+  road: '#4e56b0',
+  roadFar: '#7078cf',
+  roadSeam: '#8a93e6',
+  laneDash: '#bff3ff',
+  roadEdge: '#39e6ff',
+  roadEdgeGlow: '#39e6ff',
+  // Cabins: dark timber; their windows glow.
+  buildings: ['#3a2a5e', '#2f2450', '#43306b'],
+  windows: ['#ffd84a', '#ff9e5e', '#5ef2ff'],
+  theme: {
+    snow: '#e4eaff',
+    snowShade: '#aab4ee',
+    pine: '#123a5e',
+    pineDark: '#0b2440',
+    trunk: '#3a2433',
+    neon: '#39e6ff',
+    neonHot: '#ff4fd8',
+    ice: '#8feaff',
+    iceSide: '#4fb8dc',
+    iceTop: '#e8fdff',
+    stripe: '#ffffff',
+    pole: '#2a2f6e',
+    poleTop: '#5b63b8',
+    cat: '#ffb000',
+    catSide: '#c98200',
+    catTop: '#ffd45c',
+    track: '#1b1d3a',
+    glass: '#1b2a5c',
+    light: '#fffbd0',
+    crevasse: '#050720',
+    crevasseGlow: '#39e6ff',
+    roof: '#e4eaff',
+    lift: '#8a93e6',
+    aurora: '#6bff9e',
+    board: '#ff4fd8',
+    boardStripe: '#39e6ff',
+    // Slalom banner and its arrow: 4.3:1 or better against the piste for all four
+    // vision types (a magenta banner dropped to 1.7:1 for protans).
+    banner: '#ffd1f3',
+    bannerInk: '#1a0b3a',
   },
 };
 
@@ -148,6 +216,7 @@ export type EnvironmentDef = {
 export const ENVIRONMENTS: EnvironmentDef[] = [
   { id: 'city', name: 'Neon City', palette: NEON_CITY, unlockLevel: 1 },
   { id: 'beach', name: 'Sunset Beach', palette: SUNSET_BEACH, unlockLevel: 3 },
+  { id: 'mountain', name: 'Snowy Mountain', palette: SNOWY_MOUNTAIN, unlockLevel: 10 },
 ];
 
 export function getEnvironment(id: string): EnvironmentDef {
